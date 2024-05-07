@@ -1,0 +1,21 @@
+{
+  "name": "qr-code-pose-estimation",
+  "version": "1.0.0",
+  "description": "QR Code Pose Estimation using JSQR and JIMP",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "parcel index.html --open",
+    "build": "parcel build public/index.html"
+  },
+  "dependencies": {
+    "jimp": "^0.22.12",
+    "jsqr": "^1.4.0",
+    "opencv.js": "^4.5.5"
+  },
+  "devDependencies": {
+    "parcel": "^2.8.3",
+    "@babel/core": "^7.20.0",
+    "@babel/preset-react": "^7.20.2"
+  }
+  
+}

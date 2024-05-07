@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Pose Estimation - Webcam</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        #qrcode-container {
+            position: relative;
+            perspective: 1000px;
+        }
+
+        #qrcode {
+            width: 400px;
+            height: 400px;
+            background-color: white;
+            border: 2px solid black;
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease;
+        }
+
+        video {
+            width: 400px;
+            height: 300px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+   
+    <h1>QR Code Pose Estimation</h1>
+    <video id="webcam" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+    <div id="qrcode-container">
+        <div id="qrcode"></div>
+    </div>
+    <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+    <script type="module" src="./main.js"></script>
+</body>
+</html>
