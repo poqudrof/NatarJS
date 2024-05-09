@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Marker Links</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        form, table {
+            margin-top: 20px;
+        }
+
+        input[type="text"], input[type="number"], button {
+            margin: 5px;
+            padding: 5px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 80%;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <h1>Manage Marker Links</h1>
+    <form id="link-form">
+        <input type="number" id="marker-id" placeholder="Marker ID" required>
+        <input type="text" id="marker-url" placeholder="URL" required>
+        <button type="submit">Add/Update Link</button>
+    </form>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>URL</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="links-table-body"></tbody>
+    </table>
+    <script src="./manage.js"></script>
+</body>
+</html>

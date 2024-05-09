@@ -5,12 +5,15 @@
   "main": "src/main.js",
   "scripts": {
     "start": "parcel index.html --open",
-    "build": "parcel build public/index.html"
+    "build": "parcel build index.html",
+    "json-server": "json-server --port 5000  markerLinks.json",
+    "manage": "parcel manage.html --open"
   },
   "dependencies": {
     "jimp": "^0.22.12",
     "jsqr": "^1.4.0",
-    "opencv.js": "^4.5.5"
+    "opencv.js": "^4.5.5",
+    "json-server": "^0.17.1"
   },
   "devDependencies": {
     "parcel": "^2.8.3",

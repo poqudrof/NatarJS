@@ -1,5 +1,6 @@
 import jsQR from 'jsqr';
 import { estimatePose3D, applyTransform } from './poseEstimation';
+import { loadMarkerLinks, activateMarkerAction } from './markerHandler';
 
 const videoElement = document.getElementById('webcam');
 const canvasElement = document.getElementById('canvas');
@@ -139,16 +140,12 @@ function detectQRCode(imageData) {
 }
 function tick() {
 
-
-
   if (isDrawing && videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
       // Draw the webcam frame on the canvas
       canvasElement.height = videoElement.videoHeight;
       canvasElement.width = videoElement.videoWidth;
       canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
       const imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
-
- 
 
       let marker;
       if (markerTypeSelect.value === 'aruco') {
@@ -158,9 +155,7 @@ function tick() {
       }
 
       if (marker) {
-
-        // print 
-        console.log(marker);
+          
           const location = marker.location;
           const topLeft = location.topLeftCorner;
           const topRight = location.topRightCorner;
@@ -172,9 +167,12 @@ function tick() {
           drawLine(bottomRight, bottomLeft, '#FF3B58');
           drawLine(bottomLeft, topLeft, '#FF3B58');
 
-          //const rotationMatrix = estimatePose3D(topLeft, topRight, bottomRight, bottomLeft, canvasElement.width, canvasElement.height);
-          //applyTransform(rotationMatrix);
+          // print marker data 
+          console.log("marker: ",marker.data);
 
+          const rotationMatrix = estimatePose3D(focalLength, markerSize, topLeft, topRight, bottomRight, bottomLeft, canvasElement.width, canvasElement.height);
+          applyTransform(rotationMatrix);
+          activateMarkerAction(marker.data);
           decodedQRCodeElement.textContent = `Marker Data: ${marker.data}`;
       } else {
           applyTransform(null);
@@ -184,7 +182,12 @@ function tick() {
   requestAnimationFrame(tick);
 }
 
-document.addEventListener('DOMContentLoaded', getCameras);
-startCameraButton.addEventListener('click', startWebcam);
 
+
+document.addEventListener('DOMContentLoaded', getCameras);
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadMarkerLinks();
+});
+
+startCameraButton.addEventListener('click', startWebcam);
 stopCameraButton.addEventListener('click', stopCamera);
