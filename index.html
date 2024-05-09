@@ -10,15 +10,13 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
             background-color: #f0f0f0;
             margin: 0;
             font-family: Arial, sans-serif;
         }
 
         #qrcode-container {
-            position: relative;
-            perspective: 1000px;
+ 
         }
 
         #qrcode {
@@ -39,18 +37,50 @@
         }
 
         canvas {
-            display: none;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+        }
+
+        select, button, div {
+            margin: 5px;
+            padding: 5px;
+        }
+
+        #decoded-qrcode {
+            width: 400px;
+            text-align: center;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-   
-    <h1>QR Code Pose Estimation</h1>
+    <h1>Marker Pose Estimation - Webcam</h1>
+    <div>
+      <label for="camera-select">Camera:</label>
+      <select id="camera-select"></select>
+      <label for="resolution-select">Resolution:</label>
+      <select id="resolution-select">
+        <option value="640x480">640 x 480</option>
+        <option value="1280x720">1280 x 720</option>
+        <option value="1920x1080">1920 x 1080</option>
+      </select>
+      <label for="marker-type-select">Marker Type:</label>
+      <select id="marker-type-select">
+        <option value="aruco">Aruco</option>
+        <option value="qr">QR Code</option>
+      </select>
+      <button id="start-camera">Start Camera</button>
+      <button id="stop-camera">Stop Camera</button>
+    </div>
     <video id="webcam" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
     <div id="qrcode-container">
-        <div id="qrcode"></div>
+      <div id="qrcode"></div>
     </div>
+    <div id="decoded-qrcode">Marker Data: N/A</div>
     <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
     <script type="module" src="./main.js"></script>
 </body>
