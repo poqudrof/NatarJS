@@ -5,7 +5,7 @@ import { loadMarkerLinks, activateMarkerAction } from './markerHandler';
 const videoElement = document.getElementById('webcam');
 const canvasElement = document.getElementById('canvas');
 const canvasContext = canvasElement.getContext('2d', { willReadFrequently: true });
-const focalLength = 300; // Assume focal length of the webcam is 300
+let focalLength = 300; // Assume focal length of the webcam is 300
 const markerSize = 40; // Marker size in mm
 let currentStream = null;
 let isDrawing = false;
@@ -16,6 +16,17 @@ const markerTypeSelect = document.getElementById('marker-type-select');
 const startCameraButton = document.getElementById('start-camera');
 const stopCameraButton = document.getElementById('stop-camera');
 const decodedQRCodeElement = document.getElementById('decoded-qrcode');
+
+const focalLengthSlider = document.getElementById('focalLength');
+
+focalLengthSlider.addEventListener('input', function() {
+    focalLength = this.value;
+    // update focalText 
+    document.getElementById('focalText').textContent = focalLength;
+
+    // setPerspective(cameraWidth, focalLength); // Mettre à jour la perspective 
+
+});
 
 async function getCameras() {
     const devices = await navigator.mediaDevices.enumerateDevices();
@@ -33,16 +44,22 @@ let opticalCenterX = 0; // Initialisez avec la valeur appropriée
 let opticalCenterY = 0; // Initialisez avec la valeur appropriée
 
 
+let cameraWidth = 640; // Largeur de la caméra en pixels
+let cameraHeight = 480; // Hauteur de la caméra en pixels
+
 async function startWebcam() {
     const resolution = resolutionSelect.value.split('x');
     const width = parseInt(resolution[0]);
     const height = parseInt(resolution[1]);
 
-   // Mettre à jour le centre optique avec la moitié de la résolution
-   opticalCenterX = width / 2;
-   opticalCenterY = height / 2;
+    cameraWidth = width;
+    cameraHeight = height;
 
-   setPerspective(width, focalLength); // Mettre à jour la perspective 
+    // Mettre à jour le centre optique avec la moitié de la résolution
+    opticalCenterX = width / 2;
+    opticalCenterY = height / 2;
+
+    document.getElementById('focalText').textContent = focalLength;
 
     const constraints = {
         video: {
@@ -133,20 +150,6 @@ function detectArucoMarkers(imageData) {
 }
 
 
-function setPerspective(resolution, focalLength) {
-    // Convert the focal length to the field of view (FOV)
-    let fov = 2 * Math.atan(36 / (2 * focalLength));
-    // Convert the FOV to radians
-    fov = fov * (Math.PI / 180);
-    // Calculate the perspective value
-    let d = resolution / (2 * Math.tan(fov / 2));
-    // Set the perspective in your CSS
-    //document.documentElement.style.perspective = `${d}px`;
-
-    // Apply to qrcode-container instead 
-    document.getElementById('qrcode-container').style.perspective = `${d}px`;
-
-}
 
 function detectQRCode(imageData) {
     const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
@@ -193,7 +196,8 @@ function tick() {
           console.log("marker: ",marker.data);
 
           const rotationMatrix = estimatePose3D(focalLength, markerSize, topLeft, topRight, bottomRight, bottomLeft, canvasElement.width, canvasElement.height);
-          applyTransformInCSS(rotationMatrix);
+          
+          applyTransformInCSS(topLeft, topRight, bottomRight, bottomLeft); 
 
           // Spotify app
           // activateMarkerAction(marker.data);
