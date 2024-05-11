@@ -42,6 +42,8 @@ async function startWebcam() {
    opticalCenterX = width / 2;
    opticalCenterY = height / 2;
 
+   setPerspective(width, focalLength); // Mettre à jour la perspective 
+
     const constraints = {
         video: {
             deviceId: cameraSelect.value ? { exact: cameraSelect.value } : undefined,
@@ -131,6 +133,20 @@ function detectArucoMarkers(imageData) {
 }
 
 
+function setPerspective(resolution, focalLength) {
+    // Convert the focal length to the field of view (FOV)
+    let fov = 2 * Math.atan(36 / (2 * focalLength));
+    // Convert the FOV to radians
+    fov = fov * (Math.PI / 180);
+    // Calculate the perspective value
+    let d = resolution / (2 * Math.tan(fov / 2));
+    // Set the perspective in your CSS
+    //document.documentElement.style.perspective = `${d}px`;
+
+    // Apply to qrcode-container instead 
+    document.getElementById('qrcode-container').style.perspective = `${d}px`;
+
+}
 
 function detectQRCode(imageData) {
     const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
@@ -280,7 +296,7 @@ function tick() {
 
 
       } else {
-          applyTransformInCSS(null);
+          // applyTransformInCSS(null);
           decodedQRCodeElement.textContent = 'Marker Data: N/A';
       }
   }

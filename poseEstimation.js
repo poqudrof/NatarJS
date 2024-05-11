@@ -53,18 +53,18 @@ function applyTransformInCSS(matrix) {
 
   if (matrix) {
   //   console.log('Rotation Matrix:', `matrix3d(
-  //     ${matrix.data64F[0]}, ${matrix.data64F[1]}, ${matrix.data64F[2]}, 0,
-  //     ${matrix.data64F[4]}, ${matrix.data64F[5]}, ${matrix.data64F[6]}, 0,
-  //     ${matrix.data64F[8]}, ${matrix.data64F[9]}, ${matrix.data64F[10]}, 0,
+  //     ${matrix.data64F[0]}, ${matrix.data64F[4]}, ${matrix.data64F[8]}, 0,
+  //     ${matrix.data64F[1]}, ${matrix.data64F[5]}, ${matrix.data64F[9]}, 0,
+  //     ${matrix.data64F[2]}, ${matrix.data64F[6]}, ${matrix.data64F[10]}, 0,
   //     ${matrix.data64F[3]}, ${matrix.data64F[7]}, ${matrix.data64F[11]}, 1
   // )`); 
   
       const transform = `matrix3d(
-          ${matrix.data64F[0]}, ${matrix.data64F[1]}, ${matrix.data64F[2]}, 0,
-          ${matrix.data64F[4]}, ${matrix.data64F[5]}, ${matrix.data64F[6]}, 0,
-          ${matrix.data64F[8]}, ${matrix.data64F[9]}, ${matrix.data64F[10]}, 0,
-          ${matrix.data64F[3]}, ${matrix.data64F[7]}, ${matrix.data64F[11]}, 1
-      )`;
+        ${matrix.data64F[0]}, ${matrix.data64F[4]}, ${matrix.data64F[8]}, 0,
+        ${matrix.data64F[1]}, ${matrix.data64F[5]}, ${matrix.data64F[9]}, 0,
+        ${matrix.data64F[2]}, ${matrix.data64F[6]}, ${matrix.data64F[10]}, 0,
+        ${matrix.data64F[3]}, ${matrix.data64F[7]}, ${matrix.data64F[11]}, 1
+    )`;
 
       qrCodeElement.style.transform = transform;
   } else {
