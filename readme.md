@@ -36,6 +36,22 @@ npm run start
 
 This will open the project in your default browser.
 
+Start json-server 
+```bash 
+json-server --port 5000  markerLinks.json
+```
+
+Start the json editor UI
+```bash
+ yarn manage
+```
+
+Build a pdf from the json editor UI
+```bash
+ruby tracks.rb
+```
+
+
 ### Production
 To create a production build:
 
