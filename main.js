@@ -184,10 +184,10 @@ function tick() {
 
           // 1. Déterminer les coordonnées du rectangle dans l'espace 3D
           const rectangle3D = [
-            { x: 0, y: 2, z: 0 },
-            { x: 100, y: 0, z: 0 },
-            { x: 100, y: 100, z: 0 },
-            { x: 0, y: 100, z: 0 }
+            { x: -10, y: -10, z: 0 },
+            { x: 110, y: -10, z: 0 },
+            { x: 110, y: 110, z: 0 },
+            { x: -10, y: 110, z: 0 }
           ];
 
           // 2. Reprojeter les points dans l'espace image
@@ -205,18 +205,80 @@ function tick() {
             drawLine(point, nextPoint, '#00FF00');
           });
 
-          // 4. Extraire une sous-image du rectangle
-          const topLeftRect = rectangle2D[0];
-          const width = rectangle2D[1].x - topLeftRect.x;
-          const height = rectangle2D[3].y - topLeftRect.y;
 
-   
-          // const subImage = canvasContext.getImageData(topLeftRect.x, topLeftRect.y, width, height);
-          // Draw it in the bottom right of the canvas 
-          // canvasContext.putImageData(subImage, canvasElement.width - width, canvasElement.height - height);
+          // 1. Définir les axes 3D
+          const axes3D = [
+            { start: { x: 0, y: 0, z: 0 }, end: { x: 50, y: 0, z: 0 }, color: '#FF0000' }, // Axe X en rouge
+            { start: { x: 0, y: 0, z: 0 }, end: { x: 0, y: 50, z: 0 }, color: '#00FF00' }, // Axe Y en vert
+            { start: { x: 0, y: 0, z: 0 }, end: { x: 0, y: 0, z: 50 }, color: '#0000FF' }  // Axe Z en bleu
+          ];
+
+          // 2. Transformer et dessiner les axes
+          axes3D.forEach(axis => {
+            const start2D = applyTransform(rotationMatrix, axis.start);
+            const end2D = applyTransform(rotationMatrix, axis.end);
+
+            drawLine(
+              {
+                x: start2D.x / start2D.z * focalLength + opticalCenterX,
+                y: start2D.y / start2D.z * focalLength + opticalCenterY
+              },
+              {
+                x: end2D.x / end2D.z * focalLength + opticalCenterX,
+                y: end2D.y / end2D.z * focalLength + opticalCenterY
+              },
+              axis.color
+            );
+          });
 
 
+            // Convertir l'image de la toile en une matrice OpenCV
+          let src = cv.imread(canvasElement);
+
+          // Définir les points de source et de destination pour la transformation de perspective
+          let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [rectangle2D[0].x, rectangle2D[0].y,
+              rectangle2D[1].x, rectangle2D[1].y,
+              rectangle2D[2].x, rectangle2D[2].y, 
+              rectangle2D[3].x, rectangle2D[3].y]);
+                             
+          let width = 200;  // px
+          let height = 200; // px
+          let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, width, 0, width, height, 0, height]);
+
+          // Calculer la matrice de transformation de perspective
+          let warpMat = cv.getPerspectiveTransform(srcTri, dstTri);
+
+          // Appliquer la transformation de perspective
+          let dst = new cv.Mat();
+          cv.warpPerspective(src, dst, warpMat, new cv.Size(width, height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+
+          // Rechercher l'élément de toile existant
+          let outputCanvas = document.getElementById('outputCanvas');
+
+          // Si l'élément de toile n'existe pas, en créer un nouveau
+          if (!outputCanvas) {
+            outputCanvas = document.createElement('canvas');
+            outputCanvas.id = 'outputCanvas';
+            document.body.appendChild(outputCanvas);
+          }
+
+          // Définir la largeur et la hauteur de la toile
+          outputCanvas.width = width;
+          outputCanvas.height = height;
+
+          // Convertir la matrice OpenCV en une image de toile et la dessiner dans le coin inférieur droit de la toile
+          cv.imshow(outputCanvas, dst);
+          // canvasContext.drawImage(outputCanvas, canvasElement.width - width, canvasElement.height - height);
+
+          // Libérer les ressources
+          src.delete();
+          dst.delete();
+          warpMat.delete();
+          srcTri.delete();
+          dstTri.delete();
           decodedQRCodeElement.textContent = `Marker Data: ${marker.data}`;
+
+
       } else {
           applyTransformInCSS(null);
           decodedQRCodeElement.textContent = 'Marker Data: N/A';
