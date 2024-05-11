@@ -6,9 +6,11 @@ require 'prawn'
 require 'oauth2'
 
 # Vos identifiants Spotify
+CLIENT_ID = "82e5b8c865904528b0a965fc8ac6dbff"
+CLIENT_SECRET = "0934df145fc241cdbb991d241f3f76e4"
 
-CLIENT_ID = "HIDDEN" 
-CLIENT_SECRET = "HIDDEN"
+# CLIENT_ID = "HIDDEN" 
+# CLIENT_SECRET = "HIDDEN"
 
 # # Fonction pour obtenir le token d'accès via OAuth2
 # def get_access_token
@@ -54,14 +56,15 @@ rescue StandardError => e
 end
 
 
+  # Playlist ex: https://open.spotify.com/playlist/1TVCd0fTBqNSJDWL9Fzcy3?si=f27d89f5012540e7
+  # Track ex: "https://open.spotify.com/intl-fr/track/29U7stRjqHU6rMiS8BfaI9?si=b6b04e1427be41b3"
+
 # Fonction pour obtenir les informations d'un morceau
-def get_track_info(track)
+def get_info(track_or_playlist)
+  id = track_or_playlist.split('/').last.split('?').first
+  type = track_or_playlist.include?('playlist') ? 'playlists' : 'tracks'
 
-  # ex: "https://open.spotify.com/intl-fr/track/29U7stRjqHU6rMiS8BfaI9?si=b6b04e1427be41b3"
-  # 
-  track_id = track.split('/').last.split('?').first
-
-  url = URI("https://api.spotify.com/v1/tracks/#{track_id}")
+  url = URI("https://api.spotify.com/v1/#{type}/#{id}")
   http = Net::HTTP.new(url.host, url.port)
   http.use_ssl = true
 
@@ -69,30 +72,46 @@ def get_track_info(track)
   response = http.request(request)
 
   unless response.is_a?(Net::HTTPSuccess)
-    puts 'Erreur lors de la récupération des informations du morceau'
+    puts 'Erreur lors de la récupération des informations'
     p response
     return nil
   end
 
-  track = JSON.parse(response.body)
-  artist_name = track['artists'][0]['name']
-  track_title = track['name']
-  album_name = track['album']['name']
-  album_release_date = track['album']['release_date']
-  duration_ms = track['duration_ms']
-  album_image_url = track['album']['images'][0]['url']
-  duration_min_sec = "#{duration_ms / 60000}:#{(duration_ms / 1000) % 60}".rjust(2, '0')
+  info = JSON.parse(response.body)
 
-  {
-    'artist_name' => artist_name,
-    'track_title' => track_title,
-    'album_name' => album_name,
-    'album_release_date' => album_release_date,
-    'duration' => duration_min_sec,
-    'album_image_url' => album_image_url
-  }
+  if type == 'tracks'
+    artist_name = info['artists'][0]['name']
+    title = info['name']
+    album_name = info['album']['name']
+    album_release_date = info['album']['release_date']
+    duration_ms = info['duration_ms']
+    album_image_url = info['album']['images'][0]['url']
+    duration_min_sec = "#{duration_ms / 60000}:#{(duration_ms / 1000) % 60}".rjust(2, '0')
+
+    {
+      'artist_name' => artist_name,
+      'title' => title,
+      'album_name' => album_name,
+      'album_release_date' => album_release_date,
+      'duration' => duration_min_sec,
+      'album_image_url' => album_image_url, 
+      'type' => 'track'
+    }
+  else # Playlists
+    title = info['name']
+    owner_name = info['owner']['display_name']
+    total_tracks = info['tracks']['total']
+    playlist_image_url = info['images'][0]['url']
+
+    {
+      'title' => title,
+      'owner_name' => owner_name,
+      'total_tracks' => total_tracks,
+      'playlist_image_url' => playlist_image_url, 
+      'type' => 'playlist'
+    }
+  end
 end
-
 # Fonction pour récupérer la liste des pistes depuis le serveur web local
 def fetch_tracks_from_server
   url = URI('http://localhost:5000/links')
@@ -104,8 +123,7 @@ def fetch_tracks_from_server
     puts "Erreur lors de la récupération de la liste des pistes"
     []
   end
-end
-
+end 
 
 # Conversion de mm en points (1 mm = 2.83465 points)
 def mm_to_pt(mm)
@@ -123,26 +141,40 @@ def save_tracks_info_to_pdf(tracks, output_pdf = 'tracks_info.pdf', image_direct
 #  "23"=>"https://open.spotify.com/intl-fr/track/29U7stRjqHU6rMiS8BfaI9?si=b6b04e1427be41b3",
 #  "40"=>"https://open.spotify.com/intl-fr/track/1YrC8s6yZWw23QxW6rfM9f?si=e195703f873844f7"}
     index = 0
-    tracks.each do |code, track|
-      track_info = get_track_info(track)
+    tracks.each do |code, track_or_playlist|
 
-      next unless track_info
+      info = get_info(track_or_playlist)
 
-      # Téléchargement de l'image de l'album
-      album_image_filename = "#{track_info['track_title']}_#{track_info['artist_name']}".gsub(' ', '_') + '.jpg'
-      album_image_path = File.join(image_directory, album_image_filename)
+      next unless info
+
+      # Téléchargement de l'image
+      # Déterminer le préfixe du nom de fichier en fonction du type
+      prefix = info['type'] == 'tracks' ? info['artist_name'] : info['owner_name']
+      # Créer le nom de fichier
+      image_filename = "#{info['title']}_#{prefix}".gsub(' ', '_')
+
+      # Supprimer les virgules et les caractères spéciaux
+      image_filename = image_filename.gsub(/[^0-9A-Za-z_]/, '')
+
+      # Ajouter l'extension ".jpg" si aucune extension n'est présente
+      image_filename += ".png" unless image_filename.include?(".")
+
+      # Créer le chemin complet du fichier
+      image_path = File.join(image_directory, image_filename)
+      p "PLAYLIST Image #{image_path} - #{info["playlist_image_url"]}" 
 
       ## Skip if the file already exists
-      if File.exist?(album_image_path)
-        puts "Image de l'album déjà téléchargée sous #{album_image_path}"
+      if File.exist?(image_path)
+        puts "Image déjà téléchargée sous #{image_path}"
       else
-        download_image(track_info['album_image_url'], album_image_path)
+        download_image(info['album_image_url'] || info['playlist_image_url'], image_path)
       end
 
       # Générer une image carrée personnalisée
       square_image_filename = "DICT_6X6_100_id#{code}.png"
       square_image_path = File.join(image_directory, square_image_filename)
 
+      p "SQUARE Image #{square_image_path} - #{code}"
       `python generate_aruco.py DICT_6X6_100 #{code} 200`
 
       ## Check if the file was created 
@@ -153,49 +185,48 @@ def save_tracks_info_to_pdf(tracks, output_pdf = 'tracks_info.pdf', image_direct
         next
       end
 
-
       # code DICT_6X6_100_id6.png 
 
-      ## Rectangle arond the card 
+      ## Rectangle around the card 
       x_position = index.even? ? 0 : mm_to_pt(70) # Définir la position X en fonction de la parité de l'index
       y_position = pdf.cursor
-      
-      # pdf.stroke_color 'FF8844'
+
       ## gray instead of black
       pdf.stroke_color '222222'
 
       pdf.rounded_rectangle [-10, pdf.cursor], mm_to_pt(62 * 2 ), mm_to_pt(88), 5
       pdf.stroke
-    
+
       begin_of_card = pdf.cursor
 
-      # pdf.bounding_box([0, pdf.cursor], width: mm_to_pt(62 * 2 ), height: mm_to_pt(88)) do
-      # generate_square_image(square_image_path, "Track #{code + 1}")
-      # Création de la carte
-      # pdf.text "Carte #{code} :", size: 18, style: :bold
-      # pdf.move_down 10
       pdf.move_down 10
-      # pdf.text 'Image de l\'album :', size: 14, style: :bold
-      pdf.image album_image_path, width: 150, height: 150
+
+      p "Drawing image #{image_path}"
+      pdf.image image_path, width: 150, height: 150
 
       pdf.move_down 10
-      pdf.text "Artiste : #{track_info['artist_name']}", size: 12
-      pdf.text "Titre : #{track_info['track_title']}", size: 12, style: :bold
-      pdf.text "Album : #{track_info['album_name']}", size: 12
-      release_date = Date.strptime(track_info['album_release_date'], '%Y-%m-%d')
-      formatted_date = release_date.strftime('%d/%m/%y')
-      pdf.text "Date de sortie : #{formatted_date}", size: 12
-      pdf.text "Durée : #{track_info['duration']}", size: 12
+      if info['type'] == 'track'
+        pdf.text "Artiste : #{info['artist_name']}", size: 12
+        pdf.text "Titre : #{info['title']}", size: 12, style: :bold
+        pdf.text "Album : #{info['album_name']}", size: 12
+        release_date = Date.strptime(info['album_release_date'], '%Y-%m-%d')
+        formatted_date = release_date.strftime('%d/%m/%y')
+        pdf.text "Date de sortie : #{formatted_date}", size: 12
+        pdf.text "Durée : #{info['duration']}", size: 12
+      else
+        pdf.text "Titre : #{info['title']}", size: 12, style: :bold
+        pdf.text "Propriétaire : #{info['owner_name']}", size: 12
+        pdf.text "Nombre de pistes : #{info['total_tracks']}", size: 12
+      end
 
       height = pdf.cursor - begin_of_card
-      # pdf.move_down(height)
 
-      #pdf.text 'Code :', size: 14, style: :bold
+      p "drawing square image #{square_image_path}"
       pdf.image square_image_path, width: 150, height: 150, at: [150 + 20, pdf.cursor - height - 10]
-      
 
-      
-      pdf.move_down 20
+      pdf.move_down 40
+
+      pdf.start_new_page if pdf.cursor < mm_to_pt(88)
 
       index = index + 1
     end
