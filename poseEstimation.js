@@ -48,7 +48,7 @@ function estimatePose3D(focalLength, markerSize, topLeft, topRight, bottomRight,
   return transformationMatrix;
 }
 
-function applyTransform(matrix) {
+function applyTransformInCSS(matrix) {
   const qrCodeElement = document.getElementById('qrcode');
 
   if (matrix) {
@@ -74,4 +74,4 @@ function applyTransform(matrix) {
 
 
 // Export the functions 
-export { estimatePose3D, applyTransform };
+export { estimatePose3D, applyTransformInCSS };

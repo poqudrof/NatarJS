@@ -1,5 +1,5 @@
 import jsQR from 'jsqr';
-import { estimatePose3D, applyTransform } from './poseEstimation';
+import { estimatePose3D, applyTransformInCSS } from './poseEstimation';
 import { loadMarkerLinks, activateMarkerAction } from './markerHandler';
 
 const videoElement = document.getElementById('webcam');
@@ -29,10 +29,18 @@ async function getCameras() {
     });
 }
 
+let opticalCenterX = 0; // Initialisez avec la valeur appropriée
+let opticalCenterY = 0; // Initialisez avec la valeur appropriée
+
+
 async function startWebcam() {
     const resolution = resolutionSelect.value.split('x');
     const width = parseInt(resolution[0]);
     const height = parseInt(resolution[1]);
+
+   // Mettre à jour le centre optique avec la moitié de la résolution
+   opticalCenterX = width / 2;
+   opticalCenterY = height / 2;
 
     const constraints = {
         video: {
@@ -64,7 +72,7 @@ function stopCamera() {
       currentStream = null;
       isDrawing = false;
   }
-  applyTransform(null);
+  applyTransformInCSS(null);
   decodedQRCodeElement.textContent = 'Marker Data: N/A';
 }
 
@@ -77,8 +85,6 @@ function drawLine(begin, end, color) {
   canvasContext.stroke();
   
 }
-
-
 
 function detectArucoMarkers(imageData) {
   const src = cv.matFromImageData(imageData);
@@ -171,18 +177,74 @@ function tick() {
           console.log("marker: ",marker.data);
 
           const rotationMatrix = estimatePose3D(focalLength, markerSize, topLeft, topRight, bottomRight, bottomLeft, canvasElement.width, canvasElement.height);
-          applyTransform(rotationMatrix);
-          activateMarkerAction(marker.data);
+          applyTransformInCSS(rotationMatrix);
+
+          // Spotify app
+          // activateMarkerAction(marker.data);
+
+          // 1. Déterminer les coordonnées du rectangle dans l'espace 3D
+          const rectangle3D = [
+            { x: 0, y: 2, z: 0 },
+            { x: 100, y: 0, z: 0 },
+            { x: 100, y: 100, z: 0 },
+            { x: 0, y: 100, z: 0 }
+          ];
+
+          // 2. Reprojeter les points dans l'espace image
+          const rectangle2D = rectangle3D.map(point => {
+            const projectedPoint = applyTransform(rotationMatrix, point);
+            return {
+              x: projectedPoint.x / projectedPoint.z * focalLength + opticalCenterX,
+              y: projectedPoint.y / projectedPoint.z * focalLength + opticalCenterY
+            };
+          });
+
+          // 3. Dessiner le rectangle dans l'espace image
+          rectangle2D.forEach((point, index) => {
+            const nextPoint = rectangle2D[(index + 1) % rectangle2D.length];
+            drawLine(point, nextPoint, '#00FF00');
+          });
+
+          // 4. Extraire une sous-image du rectangle
+          const topLeftRect = rectangle2D[0];
+          const width = rectangle2D[1].x - topLeftRect.x;
+          const height = rectangle2D[3].y - topLeftRect.y;
+
+   
+          // const subImage = canvasContext.getImageData(topLeftRect.x, topLeftRect.y, width, height);
+          // Draw it in the bottom right of the canvas 
+          // canvasContext.putImageData(subImage, canvasElement.width - width, canvasElement.height - height);
+
+
           decodedQRCodeElement.textContent = `Marker Data: ${marker.data}`;
       } else {
-          applyTransform(null);
+          applyTransformInCSS(null);
           decodedQRCodeElement.textContent = 'Marker Data: N/A';
       }
   }
   requestAnimationFrame(tick);
 }
 
+function applyTransform(matrix, point) {
+  // Créer un vecteur 4D pour le point
+  const pointVector = cv.matFromArray(1, 4, cv.CV_64F, [point.x, point.y, point.z, 1]);
 
+  // Transposer le vecteur de points
+  const pointVectorT = pointVector.t();
+
+  // Appliquer la transformation
+  const transformedVector = new cv.Mat();
+  const alpha = 1;
+  const beta = 0;
+  cv.gemm(matrix, pointVectorT, alpha, new cv.Mat(), beta, transformedVector, 0);
+
+  // Retourner le point transformé
+  return {
+    x: transformedVector.data64F[0],
+    y: transformedVector.data64F[1],
+    z: transformedVector.data64F[2]
+  };
+}
 
 document.addEventListener('DOMContentLoaded', getCameras);
 document.addEventListener('DOMContentLoaded', async () => {
