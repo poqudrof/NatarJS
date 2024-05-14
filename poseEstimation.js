@@ -128,6 +128,28 @@ function transform2d(elt, x1, y1, x2, y2, x3, y3, x4, y4) {
 }
 
 
+function applyTransform(matrix, point) {
+  // Créer un vecteur 4D pour le point
+  const pointVector = cv.matFromArray(1, 4, cv.CV_64F, [point.x, point.y, point.z, 1]);
+
+  // Transposer le vecteur de points
+  const pointVectorT = pointVector.t();
+
+  // Appliquer la transformation
+  const transformedVector = new cv.Mat();
+  const alpha = 1;
+  const beta = 0;
+  cv.gemm(matrix, pointVectorT, alpha, new cv.Mat(), beta, transformedVector, 0);
+
+  // Retourner le point transformé
+  return {
+    x: transformedVector.data64F[0],
+    y: transformedVector.data64F[1],
+    z: transformedVector.data64F[2]
+  };
+}
+
+
 
 // Find transform from 4 points
 function applyTransformInCSS(topLeft, topRight, bottomRight, bottomLeft) {
@@ -156,8 +178,96 @@ function applyTransformInCSS(topLeft, topRight, bottomRight, bottomLeft) {
 }
 
 
+// dst must be deleted after use 
+function calculatePerspectiveWrap(srcOpenCV, rectangle2D) {
+  // Définir les points de source et de destination pour la transformation de perspective
+  let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [rectangle2D[0].x, rectangle2D[0].y,
+      rectangle2D[1].x, rectangle2D[1].y,
+      rectangle2D[2].x, rectangle2D[2].y, 
+      rectangle2D[3].x, rectangle2D[3].y]);
+                        
+  let width = 200;  // px
+  let height = 200; // px
+  let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, width, 0, width, height, 0, height]);
+
+  // Calculer la matrice de transformation de perspective
+  let warpMat = cv.getPerspectiveTransform(srcTri, dstTri);
+
+  // Appliquer la transformation de perspective
+  let dst = new cv.Mat();
+  cv.warpPerspective(srcOpenCV, dst, warpMat, new cv.Size(width, height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+
+  warpMat.delete();
+  srcTri.delete();
+  dstTri.delete();
+
+  return { dst, width, height };
+}
 
 
+function drawCVImage(dst, width, height) {
+  // Rechercher l'élément de toile existant
+  let outputCanvas = document.getElementById('outputCanvas');
+
+  // Si l'élément de toile n'existe pas, en créer un nouveau
+  if (!outputCanvas) {
+    outputCanvas = document.createElement('canvas');
+    outputCanvas.id = 'outputCanvas';
+    document.body.appendChild(outputCanvas);
+  }
+
+  // Définir la largeur et la hauteur de la toile
+  outputCanvas.width = width;
+  outputCanvas.height = height;
+
+  // Convertir la matrice OpenCV en une image de toile et la dessiner dans le coin inférieur droit de la toile
+  cv.imshow(outputCanvas, dst);
+}
+
+
+
+function detectArucoMarkers(srcOpenCV, imageData) {
+  const src =  srcOpenCV//cv.matFromImageData(imageData);
+  const gray = new cv.Mat();
+  cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+
+  // Create the Aruco detector with parameters
+  const dictionary = cv.getPredefinedDictionary(cv.DICT_6X6_250);
+  const detectorParameters = new cv.aruco_DetectorParameters();
+  const refineParameters = new cv.aruco_RefineParameters(10, 3, true);
+  const detector = new cv.aruco_ArucoDetector(dictionary, detectorParameters, refineParameters);
+
+  // Detect Aruco markers
+  const corners = new cv.MatVector();
+  const ids = new cv.Mat();
+  detector.detectMarkers(gray, corners, ids);
+
+  if (ids.rows > 0) {
+      // Draw the detected Aruco markers' contours
+      //cv.aruco_drawDetectedMarkers(src, corners, ids);
+
+      const markerCorners = corners.get(0).data32F;
+      return {
+          data: ids.data32S[0].toString(),
+          location: {
+              topLeftCorner: { x: markerCorners[0], y: markerCorners[1] },
+              topRightCorner: { x: markerCorners[2], y: markerCorners[3] },
+              bottomRightCorner: { x: markerCorners[4], y: markerCorners[5] },
+              bottomLeftCorner: { x: markerCorners[6], y: markerCorners[7] }
+          }
+      };
+  }
+  // src.delete();
+  gray.delete();
+  corners.delete();
+  ids.delete();
+  detectorParameters.delete();
+  refineParameters.delete();
+  detector.delete();
+  dictionary.delete();
+
+  return null;
+}
 
 // Export the functions 
-export { estimatePose3D, applyTransformInCSS };
+export { estimatePose3D, applyTransform, applyTransformInCSS, calculatePerspectiveWrap, drawCVImage, detectArucoMarkers};
