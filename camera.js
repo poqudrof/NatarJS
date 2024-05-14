@@ -4,10 +4,11 @@ let cameraWidth = 640; // Default width
 let cameraHeight = 480; // Default height
 let opticalCenterX = 0;
 let opticalCenterY = 0;
+let focalLength = 500;
 
-export function setupCamera(cameraSelect, resolutionSelect, focalLengthSlider, videoElement, canvasElement, canvasContext, startWebcamCallback) {
+export function setupCamera(cameraSelect, resolutionSelect, focalLengthSlider, videoElement, startWebcamCallback) {
     focalLengthSlider.addEventListener('input', function () {
-        const focalLength = this.value;
+        focalLength = this.value;
         document.getElementById('focalText').textContent = focalLength;
     });
 
@@ -79,6 +80,7 @@ export function setupCamera(cameraSelect, resolutionSelect, focalLengthSlider, v
         getCameraHeight: () => cameraHeight,
         getOpticalCenterX: () => opticalCenterX,
         getOpticalCenterY: () => opticalCenterY,
+        getFocalLength: () => focalLength,
         isDrawing: () => isDrawing
     };
 }

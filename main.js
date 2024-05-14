@@ -17,7 +17,7 @@ const decodedQRCodeElement = document.getElementById('decoded-qrcode');
 
 const focalLengthSlider = document.getElementById('focalLength');
 
-const camera = setupCamera(cameraSelect, resolutionSelect, focalLengthSlider, videoElement, canvasElement, canvasContext, tick);
+const camera = setupCamera(cameraSelect, resolutionSelect, focalLengthSlider, videoElement, tick);
 
 
 function detectQRCode(imageData) {
@@ -86,14 +86,14 @@ function handleMarker(marker, srcOpenCV, imageData) {
     console.log("marker: ", marker.data);
     decodedQRCodeElement.textContent = `Marker Data: ${marker.data}`;
 
-    const rotationMatrix = estimatePose3D(focalLengthSlider.value, 40, topLeft, topRight, bottomRight, bottomLeft, canvasElement.width, canvasElement.height);
+    const rotationMatrix = estimatePose3D(camera.getFocalLength(), 40, topLeft, topRight, bottomRight, bottomLeft, canvasElement.width, canvasElement.height);
 
     applyTransformInCSS(topLeft, topRight, bottomRight, bottomLeft);
 
-    drawRectangle(canvasContext, rotationMatrix, focalLengthSlider.value, camera.getOpticalCenterX(), camera.getOpticalCenterY());
-    drawAxes(canvasContext, rotationMatrix, focalLengthSlider.value, camera.getOpticalCenterX(), camera.getOpticalCenterY());
+    drawRectangle(canvasContext, rotationMatrix, camera.getFocalLength(), camera.getOpticalCenterX(), camera.getOpticalCenterY());
+    drawAxes(canvasContext, rotationMatrix, camera.getFocalLength(), camera.getOpticalCenterX(), camera.getOpticalCenterY());
 
-    const rectangle2D = createRectangle2D(rotationMatrix, focalLengthSlider.value, camera.getOpticalCenterX(), camera.getOpticalCenterY());
+    const rectangle2D = createRectangle2D(rotationMatrix, camera.getFocalLength(), camera.getOpticalCenterX(), camera.getOpticalCenterY());
 
     let { dst, width, height } = calculatePerspectiveWrap(srcOpenCV, rectangle2D);
     drawCVImage(dst, width, height);
