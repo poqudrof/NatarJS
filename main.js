@@ -105,8 +105,8 @@ function drawLine(begin, end, color) {
   
 }
 
-function detectArucoMarkers(imageData) {
-  const src = cv.matFromImageData(imageData);
+function detectArucoMarkers(srcOpenCV, imageData) {
+  const src =  srcOpenCV//cv.matFromImageData(imageData);
   const gray = new cv.Mat();
   cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
 
@@ -137,7 +137,7 @@ function detectArucoMarkers(imageData) {
       };
   }
 
-  src.delete();
+  // src.delete();
   gray.delete();
   corners.delete();
   ids.delete();
@@ -163,6 +163,10 @@ function detectQRCode(imageData) {
 
     return null;
 }
+
+
+
+
 function tick() {
 
   if (isDrawing && videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
@@ -171,10 +175,26 @@ function tick() {
       canvasElement.width = videoElement.videoWidth;
       canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
       const imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
+      let srcOpenCV;
+      
+      try {
+        srcOpenCV = cv.matFromImageData(imageData);
+      } catch (error) {
+        console.error('Une erreur s\'est produite lors de la création de la matrice OpenCV à partir des données de l\'image.', error);
+        requestAnimationFrame(tick);
+        return;
+      }
 
       let marker;
       if (markerTypeSelect.value === 'aruco') {
-          marker = detectArucoMarkers(imageData);
+        try {
+          marker = detectArucoMarkers(srcOpenCV, imageData);
+
+      } catch (error) {
+          console.error('Une erreur s\'est produite lors de la détection des marqueurs Aruco.', error);
+          requestAnimationFrame(tick);
+          return;
+        }
       } else {
           marker = detectQRCode(imageData);
       }
@@ -252,9 +272,6 @@ function tick() {
           });
 
 
-            // Convertir l'image de la toile en une matrice OpenCV
-          let src = cv.imread(canvasElement);
-
           // Définir les points de source et de destination pour la transformation de perspective
           let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [rectangle2D[0].x, rectangle2D[0].y,
               rectangle2D[1].x, rectangle2D[1].y,
@@ -270,7 +287,7 @@ function tick() {
 
           // Appliquer la transformation de perspective
           let dst = new cv.Mat();
-          cv.warpPerspective(src, dst, warpMat, new cv.Size(width, height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+          cv.warpPerspective(srcOpenCV, dst, warpMat, new cv.Size(width, height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
 
           // Rechercher l'élément de toile existant
           let outputCanvas = document.getElementById('outputCanvas');
@@ -291,7 +308,7 @@ function tick() {
           // canvasContext.drawImage(outputCanvas, canvasElement.width - width, canvasElement.height - height);
 
           // Libérer les ressources
-          src.delete();
+          srcOpenCV.delete();
           dst.delete();
           warpMat.delete();
           srcTri.delete();
