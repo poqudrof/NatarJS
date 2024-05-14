@@ -1,8 +1,8 @@
 import jsQR from 'jsqr';
-import { estimatePose3D, applyTransformInCSS, calculatePerspectiveWrap, drawCVImage, detectArucoMarkers } from './poseEstimation';
-import { loadMarkerLinks, activateMarkerAction } from './spotifyMarkerHandler';
-import { drawLine, drawRectangle, drawAxes, createRectangle2D } from './drawing';
-import { setupCamera } from './camera';
+import { estimatePose3D, applyTransformInCSS, calculatePerspectiveWrap, drawCVImage, detectArucoMarkers } from './src/poseEstimation';
+import { loadMarkerLinks, activateMarkerAction } from './src/spotifyMarkerHandler';
+import { drawLine, drawRectangle, drawAxes, createRectangle2D } from './src/drawing';
+import { setupCamera } from './src/camera';
 
 const videoElement = document.getElementById('webcam');
 const canvasElement = document.getElementById('canvas');
