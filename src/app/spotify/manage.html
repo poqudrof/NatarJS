@@ -38,6 +38,20 @@
         th {
             background-color: #f4f4f4;
         }
+
+        .download-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .download-button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
@@ -57,6 +71,12 @@
         </thead>
         <tbody id="links-table-body"></tbody>
     </table>
+    <button class="download-button" onclick="downloadPDF()">Download PDF</button>
     <script src="./manage.js"></script>
+    <script>
+        function downloadPDF() {
+            window.location.href = 'http://localhost:4567/generate_pdf';
+        }
+    </script>
 </body>
 </html>

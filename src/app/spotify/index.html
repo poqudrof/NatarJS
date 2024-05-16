@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Aruco</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        #qrcode-container {
+ 
+        }
+
+        #qrcode {
+            top: 0px;
+            left: 0px;
+            width: 150px;
+            height: 120px;
+            background-color: white;
+            border: 2px solid black;
+            transform-style: preserve-3d;
+            transition: transform 0.05s ease;
+
+            position: absolute; 
+        }
+
+        video {
+            width: 400px;
+            height: 300px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        canvas {
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          position: absolute;
+        }
+
+        select, button, div {
+            margin: 5px;
+            padding: 5px;
+        }
+
+        #decoded-qrcode {
+            width: 400px;
+            text-align: center;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        #qrcode-container { 
+            width: 640px;
+            height: 480px; 
+            position: absolute;
+            margin: 0;
+            padding: 0;
+        }
+        #rendering { 
+          position: relative;
+          width: 640px; 
+          height: 480px;
+          margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Marker Pose Estimation - Webcam</h1>
+    <div>
+      <label for="camera-select">Camera:</label>
+      <select id="camera-select"></select>
+      <label for="resolution-select">Resolution:</label>
+      <select id="resolution-select">
+        <option value="640x480">640 x 480</option>
+        <option value="1280x720">1280 x 720</option>
+        <option value="1920x1080">1920 x 1080</option>
+      </select>
+      <label for="marker-type-select">Marker Type:</label>
+      <select id="marker-type-select">
+        <option value="aruco">Aruco</option>
+        <option value="qr">QR Code</option>
+      </select>
+      <button id="start-camera">Start Camera</button>
+      <button id="stop-camera">Stop Camera</button>
+    </div>
+    <video id="webcam" autoplay playsinline></video>
+    <div id="rendering">
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <div id="decoded-qrcode">Marker Data: N/A</div>
+    <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+    <script type="module" src="./main.js"></script>
+</body>
+</html>

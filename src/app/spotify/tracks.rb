@@ -236,6 +236,6 @@ def save_tracks_info_to_pdf(tracks, output_pdf = 'tracks_info.pdf', image_direct
 end
 
 
-tracks = fetch_tracks_from_server
-save_tracks_info_to_pdf(tracks)
+# tracks = fetch_tracks_from_server
+# save_tracks_info_to_pdf(tracks)
 

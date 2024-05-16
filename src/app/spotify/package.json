@@ -4,10 +4,8 @@
   "description": "QR Code Pose Estimation using JSQR and JIMP",
   "main": "src/main.js",
   "scripts": {
-    "start": "parcel index.html --open",
-    "build": "parcel build index.html",
     "json-server": "json-server --port 5000  markerLinks.json",
-    "manage": "parcel src/app/spotify/manage.html --open"
+    "manage": "parcel ./manage.html --open"
   },
   "dependencies": {
     "jimp": "^0.22.12",
