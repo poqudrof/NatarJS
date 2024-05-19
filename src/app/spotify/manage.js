@@ -7,27 +7,39 @@ document.getElementById('link-form').addEventListener('submit', async (e) => {
     const markerUrl = document.getElementById('marker-url').value;
 
     const links = await fetchLinks();
-    links[markerId] = markerUrl;
+    const existingLink = links.find(link => link.id === markerId);
 
-    await updateLinks(links);
+    if (existingLink) {
+        await updateLink(markerId, markerUrl);
+    } else {
+        await createLink(markerId, markerUrl);
+    }
+    
     clearForm();
-    displayLinks(links);
+    displayLinks(await fetchLinks());
 });
 
-async function updateLinks(links) {
+async function createLink(id, uri) {
     await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, uri })
+    });
+}
+
+async function updateLink(id, uri) {
+    await fetch(`${apiUrl}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(links)
+        body: JSON.stringify({ id, uri })
     });
 }
 
 async function deleteLink(linkId) {
-    const links = await fetchLinks();
-    delete links[linkId];
-
-    await updateLinks(links);
-    displayLinks(links);
+    await fetch(`${apiUrl}/${linkId}`, {
+        method: 'DELETE'
+    });
+    displayLinks(await fetchLinks());
 }
 
 function clearForm() {
@@ -44,23 +56,23 @@ function displayLinks(links) {
     const linksTableBody = document.getElementById('links-table-body');
     linksTableBody.innerHTML = '';
 
-    Object.entries(links).forEach(([id, url]) => {
+    links.forEach(link => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${id}</td>
-            <td>${url}</td>
+            <td>${link.id}</td>
+            <td>${link.uri}</td>
             <td>
-                <button onclick="populateForm(${id}, '${url}')">Edit</button>
-                <button onclick="deleteLink(${id})">Delete</button>
+                <button onclick="populateForm('${link.id}', '${link.uri}')">Edit</button>
+                <button onclick="deleteLink('${link.id}')">Delete</button>
             </td>
         `;
         linksTableBody.appendChild(row);
     });
 }
 
-function populateForm(id, url) {
+function populateForm(id, uri) {
     document.getElementById('marker-id').value = id;
-    document.getElementById('marker-url').value = url;
+    document.getElementById('marker-url').value = uri;
 }
 
 window.deleteLink = deleteLink;

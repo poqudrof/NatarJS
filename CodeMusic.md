@@ -11,14 +11,14 @@ The project uses json-server to store the links and a json editor UI to update t
 json-server --port 5000  markerLinks.json
 ```
 
+3. Start the pdf server
+```bash
+ruby pdfgen.rb
+```
+
 2. Start the editor (json editor UI)
 ```bash
  yarn manage
-```
-
-3. Build a pdf from the json editor UI
-```bash
-ruby tracks.rb
 ```
 
 ## Running the app 
