@@ -2,16 +2,13 @@
   "name": "qr-code-pose-estimation",
   "version": "1.0.0",
   "description": "QR Code Pose Estimation using JSQR and JIMP",
-  "main": "index.js",
   "scripts": {
-    "json-server": "json-server --port 5000  markerLinks.json",
-    "manage": "parcel ./manage.html --open",
     "start-db": "json-server --port 5000 markerLinks.json",
     "start-pdf": "ruby pdfgen.rb",
-    "start-editor": "yarn manage",
-    "start-app": "yarn exec parcel index.html",
-    "build-cards": "concurrently \"yarn start-db\" \"yarn start-pdf\" \"yarn start-editor\"",
-    "run-app": "yarn start-db && yarn start-app"
+    "start-editor": "parcel ./manage.html --open",
+    "start-app": "parcel serve ./index.html",
+    "start-all": "concurrently \"yarn start-db\" \"yarn start-pdf\" \"yarn start-editor\" \"yarn start-app\""
+   
   },
   "dependencies": {
     "jimp": "^0.22.12",

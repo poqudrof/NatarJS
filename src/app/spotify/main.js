@@ -2,7 +2,7 @@ import jsQR from 'jsqr';
 import { detectArucoMarkers } from '../../poseEstimation';
 import { loadMarkerLinks, activateMarkerAction } from './spotifyMarkerHandler';
 import { drawLine } from '../../drawing';
-import { setupCamera } from '../../src/camera';
+import { setupCamera } from '../../camera';
 
 const videoElement = document.getElementById('webcam');
 const canvasElement = document.getElementById('canvas');
@@ -18,8 +18,7 @@ const decodedQRCodeElement = document.getElementById('decoded-qrcode');
 const focalLengthSlider = document.getElementById('focalLength');
 
 const camera = setupCamera(cameraSelect, resolutionSelect, focalLengthSlider, videoElement, tick);
-
-
+ 
 function detectQRCode(imageData) {
     const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
 

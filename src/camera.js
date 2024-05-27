@@ -7,10 +7,13 @@ let opticalCenterY = 0;
 let focalLength = 500;
 
 export function setupCamera(cameraSelect, resolutionSelect, focalLengthSlider, videoElement, startWebcamCallback) {
-    focalLengthSlider.addEventListener('input', function () {
-        focalLength = this.value;
-        document.getElementById('focalText').textContent = focalLength;
-    });
+    
+    if(focalLengthSlider){    
+      focalLengthSlider.addEventListener('input', function () {
+            focalLength = this.value;
+            document.getElementById('focalText').textContent = focalLength;
+        });
+    }  
 
     document.getElementById('start-camera').addEventListener('click', startWebcam);
     document.getElementById('stop-camera').addEventListener('click', stopCamera);

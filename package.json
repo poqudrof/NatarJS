@@ -10,15 +10,15 @@
     "manage": "parcel src/app/spotify/manage.html --open"
   },
   "dependencies": {
+    "firebase": "^10.12.2",
     "jimp": "^0.22.12",
+    "json-server": "^0.17.1",
     "jsqr": "^1.4.0",
-    "opencv.js": "^4.5.5",
-    "json-server": "^0.17.1"
+    "opencv.js": "^4.5.5"
   },
   "devDependencies": {
-    "parcel": "^2.8.3",
     "@babel/core": "^7.20.0",
-    "@babel/preset-react": "^7.20.2"
+    "@babel/preset-react": "^7.20.2",
+    "parcel": "^2.8.3"
   }
-  
 }
