@@ -112,6 +112,16 @@ Corresponds detected QR code corners to 3D points.
 Estimates the pose using OpenCV's PnP algorithm.
 3. Applies a 3D CSS transformation.
 
+
+## Issue solving 
+
+
+### Problem: parcel watch error: 
+
+Expected content key 2d39cdf7c618ab5b to exist. Solution: `rm -rf .parcel-cache`.
+
+Currently in Parcel github issue tracker: https://github.com/parcel-bundler/parcel/issues/8874 
+
 ## Acknowledgements
 
 * ChatGPT
@@ -121,3 +131,4 @@ Estimates the pose using OpenCV's PnP algorithm.
 
 ## Licence
 MIT License
+
