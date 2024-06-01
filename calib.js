@@ -11,6 +11,7 @@ const fpsSelect = document.getElementById('fps-select');
 const sliderContainer = document.querySelector('.slider-container');
 const toggleSlidersButton = document.getElementById('toggle-sliders-button');
 const fullscreenButton = document.getElementById('fullscreen-button');
+const circleSpacingSlider = document.getElementById('circle-spacing-slider'); 
 
 // Function to create the grid of circles
 function createGrid() {
@@ -19,17 +20,26 @@ function createGrid() {
     const frequencyDiff = parseFloat(frequencyDiffSlider.value);
     const circleSize = parseInt(circleSizeSlider.value);
 
-    for (let i = 0; i < 8; i++) {
-        for (let j = 0; j < 8; j++) {
-            const cercle = document.createElement('div');
-            cercle.classList.add('cercle');
-            const frequency = minFrequency + (i * 8 + j) * frequencyDiff;
-            const period = 1 / frequency;
-            cercle.style.animationDuration = `${period}s`;
-            cercle.style.width = `${circleSize}px`;
-            cercle.style.height = `${circleSize}px`;
-            grid.appendChild(cercle);
-        }
+
+  //   <div>
+  //   <label for="circle-spacing-slider">Circle Spacing: <span id="circle-spacing-value">50</span> px</label>
+  //   <input type="range" id="circle-spacing-slider" min="10" max="100" step="1" value="50">
+  // </div>
+    const circleSpacing = parseInt(circleSpacingSlider.value);
+    for (let i = 0; i < 4; i++) {
+      for (let j = 0; j < 4; j++) {
+        const cercle = document.createElement('div');
+        cercle.classList.add('cercle');
+        const frequency = minFrequency + (i * 4 + j) * frequencyDiff;
+
+        console.log("circle #", i * 4 + j, "frequency: ", frequency)
+        const period = 1 / frequency;
+        cercle.style.animationDuration = `${period}s`;
+        cercle.style.width = `${circleSize}px`;
+        cercle.style.height = `${circleSize}px`;
+        cercle.style.margin = `${circleSpacing}px`;
+        grid.appendChild(cercle);
+      }
     }
 }
 
@@ -53,7 +63,7 @@ function updateValues() {
     const frequencyDiff = parseFloat(frequencyDiffSlider.value);
     const circleSize = parseInt(circleSizeSlider.value);
 
-    let nCircles = 8 * 8;
+    let nCircles = 4 * 4;
 
     const lastDotIndex = nCircles - 1;
     const lastDotFrequency = minFrequency + lastDotIndex * frequencyDiff;
@@ -117,6 +127,7 @@ circleSizeSlider.addEventListener('input', updateValues);
 fpsSelect.addEventListener('change', updateValues);
 toggleSlidersButton.addEventListener('click', toggleSliders);
 fullscreenButton.addEventListener('click', makeFullscreen);
+circleSpacingSlider.addEventListener("input", updateValues);
 
 // Initialize the grid when the document is loaded
 document.addEventListener('DOMContentLoaded', () => {
