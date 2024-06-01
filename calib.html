@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grille de Cercles Cycliques</title>
+    <link rel="stylesheet" href="./calib.css">
+</head>
+<body>
+    <div class="slider-container">
+        <div id="user-info">
+            <p id="user-name"></p>
+            <button id="google-signin-button">Sign in with Google</button>
+            <button id="google-signout-button" style="display: none;">Sign out</button>
+        </div>
+        <div>
+            <label for="min-frequency-slider">Min Frequency: <span id="min-frequency-value">1</span> Hz</label>
+            <input type="range" id="min-frequency-slider" min="0.01" max="5" step="0.01" value="1">
+        </div>
+        <div>
+            <label for="frequency-diff-slider">Frequency Difference: <span id="frequency-diff-value">0.1</span> Hz</label>
+            <input type="range" id="frequency-diff-slider" min="0.001" max="0.1" step="0.001" value="0.1">
+        </div>
+        <div>
+            <label for="circle-size-slider">Circle Size: <span id="circle-size-value">50</span> px</label>
+            <input type="range" id="circle-size-slider" min="10" max="100" step="1" value="50">
+        </div>
+        <div>
+            <label for="fps-select">FPS:</label>
+            <select id="fps-select">
+                <option value="30">30 FPS</option>
+                <option value="60">60 FPS</option>
+            </select>
+        </div>
+        <div>
+             Time 3 blink: <span id="total-time">3</span>
+             <br/>
+            <span># img 3 blink: <span id="image-count">10</span></span><br>
+            <span>blink: <span id="blink-count">0</span> s</span><br>
+            <span id="frame-time-text">0</span> ms
+        </div>
+    </div>
+
+    <div class="grid"></div>
+
+    <script type="module"  src="calib.js"></script>
+    <script type="module" src="./auth.js"></script>
+</body>
+</html>
