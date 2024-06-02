@@ -1,3 +1,5 @@
+// Source : 
+// https://gist.github.com/corbanbrook/4ef7ce98fe4453d754cd7e4a341d6e5b
 // Fourier Transform Module used by DFT, FFT, RFFT
 function FourierTransform(bufferSize, sampleRate) {
   this.bufferSize = bufferSize;

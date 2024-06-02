@@ -1,77 +1,115 @@
 import { FFT } from './fft.js';
+import { signInWithGoogle, signOutGoogle, auth, onAuthStateChanged, db, getDoc, setDoc, doc } from './src/firebase';
 
 const video = document.getElementById('video');
 const constraints = { video: true };
-const fpsDisplay = document.getElementById('fps');
+const fpsDisplay = document.getElementById('fpsValue');
+const frameCountDisplay = document.getElementById('frameCountValue');
 const canvasOutput = document.getElementById('canvasOutput');
 const contextOutput = canvasOutput.getContext('2d');
+const startButton = document.getElementById('startButton');
+const stopButton = document.getElementById('stopButton');
+const averageFPSDisplay = document.getElementById('averageFPSValue');
 
 let images = [];
-const maxImages = 1024;
+const maxImages = 512;
 let startTime = null;
-let computedFPS = 60; // Default FPS, will be updated
+let frameCount = 0;
+let recording = false;
+
+let logged_user;
+
+// Working with  1Hz, p 0.4Hz Step, 512 frames
 
 
-// List of all frequencies that we can compute: 
-// for each id between 0 and maxImages
-const frequencies = [];
-for (let id = 0; id < maxImages; id++) {
-  const freq = id / maxImages * computedFPS;
-  frequencies.push(freq);
-}
-console.log('List of frequencies:', frequencies);
+document.getElementById('google-signin-button').addEventListener('click', () => {
+  signInWithGoogle();
+});
 
-// the step between each frequency 
-console.log('Step between each frequency:', computedFPS / maxImages);
+document.getElementById('google-signout-button').addEventListener('click', () => {
+  signOutGoogle();
+});
 
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+      logged_user = user;
+      document.getElementById('google-signin-button').style.display = 'none';
+      document.getElementById('google-signout-button').style.display = 'block';
+      document.getElementById('user-name').innerText = `Welcome, ${user.displayName}`;
+  } else {
+      document.getElementById('google-signin-button').style.display = 'block';
+      document.getElementById('google-signout-button').style.display = 'none';
+      document.getElementById('user-name').innerText = '';
+      logged_user = null;
+  }
+});
+
+
+startButton.addEventListener('click', startRecording);
+stopButton.addEventListener('click', stopRecording);
 
 navigator.mediaDevices.getUserMedia(constraints)
     .then(stream => {
         video.srcObject = stream;
-        captureFrames();
     })
     .catch(err => {
         console.error('Error accessing webcam: ', err);
     });
 
+function startRecording() {
+    recording = true;
+    startButton.disabled = true;
+    stopButton.disabled = false;
+    images = [];
+    frameCount = 0;
+    startTime = performance.now();
+    requestAnimationFrame(captureFrames);
+}
+
+function stopRecording() {
+    recording = false;
+    startButton.disabled = false;
+    stopButton.disabled = true;
+    const elapsedTime = (performance.now() - startTime) / 1000; // seconds
+    const averageFPS = frameCount / elapsedTime;
+    averageFPSDisplay.textContent = averageFPS.toFixed(2);
+    processImages();
+}
+
 function captureFrames() {
+    if (!recording) return;
+
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d', { willReadFrequently: true });
     canvas.width = video.width;
     canvas.height = video.height;
 
-    startTime = performance.now();
-    let frameCount = 0;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    images.push(imageData);
+    frameCount++;
+    frameCountDisplay.textContent = frameCount;
 
+    const currentTime = performance.now();
+    const elapsedTime = (currentTime - startTime) / 1000; // Convert to seconds
+    const currentFPS = frameCount / elapsedTime;
+    fpsDisplay.textContent = currentFPS.toFixed(2);
+    computedFPS = currentFPS; // Update computedFPS using currentFPS
 
-    function capture() {
-        if (images.length < maxImages) {
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-            images.push(imageData);
-
-            console.log('# images ', images.length);
-            frameCount++;
-
-            let currentTime = performance.now();
-            let elapsedTime = (currentTime - startTime) / 1000;  // Convert to seconds
-            computedFPS = frameCount / elapsedTime;
-            fpsDisplay.textContent = `FPS: ${computedFPS.toFixed(2)}`;
-
-            requestAnimationFrame(capture);
-        } else {
-            processImages();
-        }
+    if (images.length < maxImages) {
+        requestAnimationFrame(captureFrames);
+    } else {
+        stopRecording();
     }
-
-    capture();
 }
 
-function processImages() {
+async function processImages() {
     const width = images[0].width;
     const height = images[0].height;
 
     const frequencyMap = contextOutput.createImageData(width, height);
+    const significantFrequencies = [];
+
     for (let r = 0; r < height; r++) {
         for (let c = 0; c < width; c++) {
             let pixelSeries = [];
@@ -81,17 +119,10 @@ function processImages() {
                 pixelSeries.push(gray / 255.0);
             }
 
-            //console.log('pixelSeries', pixelSeries);
-          
-            let fft = new FFT(pixelSeries.length, 60 );
+            let fft = new FFT(pixelSeries.length, computedFPS);
             fft.forward(pixelSeries);
-
             fft.calculateSpectrum();
 
-            if(c == 0 && r == 0){
-              console.log('fft', fft.spectrum);
-            }
-           
             let magnitudes = fft.spectrum;
 
             let maxIdx = 0;
@@ -103,15 +134,13 @@ function processImages() {
                 }
             }
 
-            
             let freq = maxIdx / maxImages * computedFPS;  // Use computed FPS
-            
 
-            if(maxVal > 0.10){
-              console.log('freq found ', freq, 'maxVal', maxVal);
+            if (maxVal > 0.10) {
+                significantFrequencies.push({ x: c, y: r, frequency: freq, amplitude: maxVal });
             }
-            let color  = getColorFromFrequency(freq, maxVal);
-          
+
+            let color = getColorFromFrequency(freq, maxVal);
 
             const index = (r * width + c) * 4;
             frequencyMap.data[index] = color[0];     // R
@@ -122,25 +151,73 @@ function processImages() {
     }
 
     contextOutput.putImageData(frequencyMap, 0, 0);
+
+    if (significantFrequencies.length > 0) {
+        const frequencies = significantFrequencies.map(frequency => frequency.frequency);
+        const uniqueFrequencies = [...new Set(frequencies)];
+
+        const centers = uniqueFrequencies.map(freq => {
+            const filteredFrequencies = significantFrequencies.filter(frequency => frequency.frequency === freq);
+            const center = calculateCenter(filteredFrequencies, freq);
+            return center;
+        });
+
+        drawCenters(centers);
+
+        await saveCentersToFirestore(centers);
+    } else {
+        console.log('No significant frequencies found');
+    }
+}
+
+async function saveCentersToFirestore(centers) {
+  await setDoc(doc(db, 'users', logged_user.uid), { fftCenters: centers }, { merge: true });
 }
 
 function getColorFromFrequency(freq, amplitude) {
     const maxAmplitude = 1;
     const minAmplitude = 0.10;
 
-    // console.log('freq', freq, 'amplitude', amplitude);
-
-    if (amplitude < minAmplitude || freq < 0.9 || freq > 4.1 ) {
-         return [0, 0, 0]; // Black for low amplitude
+    if (amplitude < minAmplitude) {
+        return [0, 0, 0]; // Black for low amplitude
     }
 
     // Normalize amplitude and frequency
     let normAmplitude = Math.min(1, amplitude / maxAmplitude);
-    let normFrequency = Math.min(1, (freq-0.9) / (4-0.9)); // Assuming max frequency of 30 Hz
+    let normFrequency = Math.min(1, (freq) / (5)); // Assuming max frequency of 30 Hz
 
-    let red =  normFrequency * 255;
+    let red = normFrequency * 255;
     let blue = (1 - normFrequency) * 255;
     let green = amplitude * 5 * 255;
 
     return [blue, green, red];
 }
+
+function calculateCenter(points, freq) {
+    let sumX = 0;
+    let sumY = 0;
+    let count = 0;
+
+    points.forEach(point => {
+        sumX += point.x;
+        sumY += point.y;
+        count++;
+    });
+
+    return { freq, x: sumX / count, y: sumY / count };
+}
+
+function drawCenters(centers) {
+    centers.forEach(center => {
+        contextOutput.beginPath();
+        contextOutput.arc(center.x, center.y, 5, 0, 2 * Math.PI); // Draw a small circle
+        contextOutput.fillStyle = 'red';
+        contextOutput.fill();
+        contextOutput.font = '12px Arial';
+        contextOutput.fillText(center.freq.toFixed(2) + ' Hz', center.x + 7, center.y - 7); // Display the frequency
+        contextOutput.closePath();
+    });
+}
+
+
+
