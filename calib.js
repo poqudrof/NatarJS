@@ -1,4 +1,31 @@
 const { set } = require("firebase/database");
+import { signInWithGoogle, signOutGoogle, auth, onAuthStateChanged, db, getDoc, setDoc, doc } from './src/firebase';
+
+document.getElementById('google-signin-button').addEventListener('click', () => {
+  signInWithGoogle();
+});
+
+document.getElementById('google-signout-button').addEventListener('click', () => {
+  signOutGoogle();
+});
+
+let signed_in_user = null;
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+      signed_in_user = user;
+      document.getElementById('google-signin-button').style.display = 'none';
+      document.getElementById('google-signout-button').style.display = 'block';
+      document.getElementById('user-name').innerText = `Welcome, ${user.displayName}`;
+  } else {
+      document.getElementById('google-signin-button').style.display = 'block';
+      document.getElementById('google-signout-button').style.display = 'none';
+      document.getElementById('user-name').innerText = '';
+      signed_in_user = null;
+  }
+});
+
+        
 
 const grid = document.querySelector('.grid');
 const minFrequencySlider = document.getElementById('min-frequency-slider');
@@ -79,22 +106,34 @@ function updateValues() {
     frameTimeDisplay.textContent = frameTime.toFixed(2) + ' ms';
 
     createGrid();
-    logCircleCenters();  // Log circle centers after updating the grid
+    // logCircleCenters();  // Log circle centers after updating the grid
 }
 
-// Function to log the center of each circle
-function logCircleCenters() {
-    const circles = document.querySelectorAll('.cercle');
-    const centers = [];
-    const pixelRatio = window.devicePixelRatio || 1;
-    circles.forEach(cercle => {
-        const rect = cercle.getBoundingClientRect();
-        const centerX = (rect.left + rect.width / 2) * pixelRatio;
-        const centerY = (rect.top + rect.height / 2) * pixelRatio;
-        centers.push({ x: centerX, y: centerY });
-    });
-    console.log(centers);
-    // For demonstration, displaying the centers in the console
+
+// <button id="save-button">Save</button>
+document.getElementById('save-button').addEventListener('click', logCircleCenters);
+
+
+// Function to log the center of each circle along with the frequency
+async function logCircleCenters() {
+  const circles = document.querySelectorAll('.cercle');
+  const centers = [];
+  const pixelRatio = window.devicePixelRatio || 1;
+  const minFrequency = parseFloat(minFrequencySlider.value);
+  const frequencyDiff = parseFloat(frequencyDiffSlider.value);
+
+  circles.forEach((cercle, index) => {
+      const rect = cercle.getBoundingClientRect();
+      const centerX = (rect.left + rect.width / 2) * pixelRatio;
+      const centerY = (rect.top + rect.height / 2) * pixelRatio;
+      const frequency = minFrequency + index * frequencyDiff;
+      centers.push({ x: centerX, y: centerY, frequency: frequency });
+  });
+
+  await setDoc(doc(db, 'users', signed_in_user.uid), { blinkingCircles: centers }, { merge: true });
+
+  console.log(centers);
+  // For demonstration, displaying the centers in the console
 }
 
 // Function to toggle the visibility of the sliders
@@ -111,9 +150,9 @@ function makeFullscreen() {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen();
 
-        setTimeout(() => {
-            logCircleCenters();
-        }, 1000);
+        // setTimeout(() => {
+        //     logCircleCenters();
+        // }, 1000);
     } else {
         if (document.exitFullscreen) {
             document.exitFullscreen();
@@ -132,5 +171,4 @@ circleSpacingSlider.addEventListener("input", updateValues);
 // Initialize the grid when the document is loaded
 document.addEventListener('DOMContentLoaded', () => {
     createGrid();
-    logCircleCenters();  // Log circle centers after initializing the grid
 });
