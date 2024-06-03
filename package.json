@@ -10,6 +10,7 @@
     "manage": "parcel src/app/spotify/manage.html --open"
   },
   "dependencies": {
+    "canvas-txt": "^4.1.1",
     "firebase": "^10.12.2",
     "jimp": "^0.22.12",
     "json-server": "^0.17.1",

@@ -6,7 +6,6 @@ import { setupCamera } from './src/camera';
 import { signInWithGoogle, signOutGoogle, auth, 
          onAuthStateChanged, db, getDoc, setDoc, doc } from './src/firebase';
 
-
 const videoElement = document.getElementById('webcam');
 const canvasElement = document.getElementById('canvas');
 const canvasContext = canvasElement.getContext('2d', { willReadFrequently: true });

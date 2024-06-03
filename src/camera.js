@@ -73,7 +73,7 @@ export function setupCamera(cameraSelect, resolutionSelect, focalLengthSlider, v
             isDrawing = false;
         }
         // applyTransformInCSS(null);
-        document.getElementById('decoded-qrcode').textContent = 'Marker Data: N/A';
+        // document.getElementById('decoded-qrcode').textContent = 'Marker Data: N/A';
     }
 
     document.addEventListener('DOMContentLoaded', getCameras);
