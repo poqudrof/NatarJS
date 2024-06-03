@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
 <svg
    xmlns:dc="http://purl.org/dc/elements/1.1/"
    xmlns:cc="http://creativecommons.org/ns#"
@@ -15,8 +13,8 @@
    viewBox="0 0 297 210"
    version="1.1"
    id="svg855"
-   inkscape:version="0.92.2 5c3e80d, 2017-08-06"
-   sodipodi:docname="A4-default.svg">
+   inkscape:version="1.0.2 (e86c8708, 2021-01-15)"
+   sodipodi:docname="markerlist.svg">
   <defs
      id="defs849" />
   <sodipodi:namedview
@@ -26,17 +24,18 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.4"
-     inkscape:cx="614.16007"
-     inkscape:cy="110.46769"
+     inkscape:zoom="1.3443972"
+     inkscape:cx="609.6971"
+     inkscape:cy="140.96463"
      inkscape:document-units="mm"
      inkscape:current-layer="g1446"
      showgrid="false"
-     inkscape:window-width="1920"
-     inkscape:window-height="1056"
+     inkscape:window-width="1434"
+     inkscape:window-height="847"
      inkscape:window-x="0"
-     inkscape:window-y="0"
-     inkscape:window-maximized="1" />
+     inkscape:window-y="25"
+     inkscape:window-maximized="1"
+     inkscape:document-rotation="0" />
   <metadata
      id="metadata852">
     <rdf:RDF>
@@ -119,18 +118,18 @@
          y="29.328373" />
       <text
          xml:space="preserve"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.38666677px;line-height:0%;font-family:'Linux Biolinum';-inkscape-font-specification:'Linux Biolinum, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.28222224px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.38667px;line-height:0%;font-family:'Linux Biolinum';-inkscape-font-specification:'Linux Biolinum, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.282222px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
          x="142.33786"
          y="223.90704"
          id="text4259"><tspan
-           style="font-size:4.58611107px;line-height:1.25;stroke-width:0.28222224px"
+           style="font-size:4.58611px;line-height:1.25;stroke-width:0.282222px"
            sodipodi:role="line"
            id="tspan4261"
            x="142.33786"
            y="223.90704">http://rea.lity.tech</tspan></text>
       <text
          xml:space="preserve"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.38666677px;line-height:0%;font-family:'Linux Biolinum';-inkscape-font-specification:'Linux Biolinum, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.28222224px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.38667px;line-height:0%;font-family:'Linux Biolinum';-inkscape-font-specification:'Linux Biolinum, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.282222px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
          x="157.08528"
          y="217.38577"
          id="text4198"><tspan
@@ -138,7 +137,34 @@
            sodipodi:role="line"
            x="157.08528"
            y="217.38577"
-           style="font-weight:bold;font-size:5.29166651px;line-height:1.25;text-align:center;text-anchor:middle;stroke-width:0.28222224px"> PapARt</tspan></text>
+           style="font-weight:bold;font-size:5.29167px;line-height:1.25;text-align:center;text-anchor:middle;stroke-width:0.282222px"> PapARt</tspan></text>
+      <image
+         width="52.916668"
+         height="52.916668"
+         preserveAspectRatio="none"
+         xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAAAAACIM/FCAAAD50lEQVR4Ad3BsQ3AQBDDMGn/oZ0J
+XBh4XBFSfkJ+Qn5CfkJ+Qn5CfkJ+Qn5CfkJ+Qn5CfkJ+Qn5CfkJ+Qn5CfkJ+Qn5CfkJ+Qn5CfkIO
+hJWs5EBYyUoOhJWs5EBYyUoOhJWs5EBYyUoOhJWs5EBYyUoOhJWs5EBYyUoOhJWs5EBYyUoOhJWs
+5EBYyUoOhJWs5EBYyUoOhJWs5EBYyUoOhJWs5EBYyUoOhJWs5EBYyUoOhJWs5EBYyUoOhJWspAmF
+FOEZWUkTCinCM7KSJhRShGdkJU0opAjPyEqaUEgRnpGVNKGQIjwjK2lCIUV4RlbShEKK8IyspAmF
+FOEZWUkTCinCM7KSJhRShGdkJU0opAjPyEqaUEgRnpGVNKGQIjwjK2lCIUV4RlbShEKK8IyspAmF
+FOEZWUkTCinCM7KSJhRShGdkJU0opAjPyEqaUEgRnpGVNKGQIjwjK2lCIUV4RlbShEKK8IyspAmF
+FOEZWUkTCnkmFLKSJhTyTChkJU0o5JlQyEqaUMgzoZCVNKGQZ0IhK2lCIc+EQlbShEKeCYWspAmF
+PBMKWUkTCnkmFLKSJhTyTChkJU0o5JlQyEqaUMgzoZCVNKGQZ0IhK2lCIc+EQlbShEKeCYWspAmF
+PBMKWUkTCnkmFLKSJhTyTChkJU0o5JlQyEqaUMgzoZCVNKGQZ0IhK2lCIc+EQlbShEKeCYWspAmF
+PBMKWUkTCnkmFLKSA2ElKzkQVrKSA2ElKzkQVrKSA2ElKzkQVrKSA2ElKzkQVrKSA2ElKzkQVrKS
+A2ElKzkQVrKSA2ElKzkQVrKSA2ElKzkQVrKSA2ElKzkQVrKSA2ElKzkQVrKSA2ElKzkQVrKSA2El
+KzkQVrKSA2ElKzkQCnlGDoRCnpEDoZBn5EAo5Bk5EAp5Rg6EQp6RA6GQZ+RAKOQZORAKeUYOhEKe
+kQOhkGfkQCjkGTkQCnlGDoRCnpEDoZBn5EAo5Bk5EAp5Rg6EQp6RA6GQZ+RAKOQZORAKeUYOhEKe
+kQOhkGfkQCjkGTkQCnlGZqGQVShkJbNQyCoUspJZKGQVClnJLBSyCoWsZBYKWYVCVjILhaxCISuZ
+hUJWoZCVzEIhq1DISmahkFUoZCWzUMgqFLKSWShkFQpZySwUsgqFrGQWClmFQlYyC4WsQiErmYVC
+VqGQlcxCIatQyEpmoZBVKGQls1DIKhSyklkoZBUKWcksFLIKhaxkFgpZhUJWMguFrEIhK5mFQlah
+kJXMQiGrUMhKZqGQVShkJT8hPyE/IT8hPyE/IT8hPyE/IT8hPyE/IT8hPyE/IT8hPyE/IT8hPyE/
+IT8hPyE/IT/xAXKA4cme8oaTAAAAAElFTkSuQmCC
+"
+         id="image859"
+         x="90.877014"
+         y="70.569145" />
     </g>
   </g>
 </svg>
