@@ -351,8 +351,6 @@ function detectArucoMarkers(srcOpenCV, imageData) {
     });
   }
 
-  console.log("Aruco markers: ", markers);
-
   // Clean up
   gray.delete();
   corners.delete();

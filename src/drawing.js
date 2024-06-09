@@ -1,13 +1,6 @@
 import { applyTransform } from './poseEstimation';
 
-function createRectangle2D(rotationMatrix, focalLength, opticalCenterX, opticalCenterY) {
-  // 1. Déterminer les coordonnées du rectangle dans l'espace 3D
-  const rectangle3D = [
-    { x: 0, y: 0, z: 0 },
-    { x: 100, y: 0, z: 0 },
-    { x: 100, y: 100, z: 0 },
-    { x: 0, y: 100, z: 0 }
-  ];
+function createRectangle2D(rectangle3D, rotationMatrix, focalLength, opticalCenterX, opticalCenterY) {
 
   // 2. Reprojeter les points dans l'espace image
   const rectangle2D = rectangle3D.map(point => {
@@ -31,8 +24,7 @@ function drawLine(canvasContext, begin, end, color) {
 }
 
 
-function drawRectangle(canvasContext, rotationMatrix, focalLength, opticalCenterX, opticalCenterY) {
-  const rectangle2D = createRectangle2D(rotationMatrix, focalLength, opticalCenterX, opticalCenterY);
+function drawRectangle(rectangle2D, canvasContext) {
 
   // Dessiner le rectangle dans l'espace image
   rectangle2D.forEach((point, index) => {

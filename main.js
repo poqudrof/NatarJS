@@ -88,8 +88,6 @@ function tick() {
 
 function handleMultiMarker(markers, srcOpenCV, imageData) {
 
-  console.log("markers in handle: ", markers);
-
   let markerIds = [];
   markers.forEach(marker => {
     const location = marker.location;
@@ -106,8 +104,6 @@ function handleMultiMarker(markers, srcOpenCV, imageData) {
     markerIds.push(marker.id);
   });
 
-  console.log("markerIds: ", markerIds);
-  console.log("markerPositions: ", markerPositions);
   decodedQRCodeElement.textContent = `Marker Data: ${markerIds}`;
 
   const rotationMatrix = estimatePose3DFromMultipleMarkers(camera.getFocalLength(), markers, markerPositions, canvasElement.width, canvasElement.height);
@@ -119,12 +115,31 @@ function handleMultiMarker(markers, srcOpenCV, imageData) {
   }
 
   // Now the Corners need to be computed... 
-  // applyTransformInCSS(topLeft, topRight, bottomRight, bottomLeft);
 
-  drawRectangle(canvasContext, rotationMatrix, camera.getFocalLength(), camera.getOpticalCenterX(), camera.getOpticalCenterY());
+  // 1. Déterminer les coordonnées du rectangle dans l'espace 3D
+  const rectangle3DPaper = [
+    { x: 0, y: 0, z: 0 },
+    { x: 297, y: 0, z: 0 },
+    { x: 297, y: 210, z: 0 },
+    { x: 0, y: 210, z: 0 }
+  ];
+    
+  const paper2D = createRectangle2D(rectangle3DPaper, rotationMatrix, camera.getFocalLength(), camera.getOpticalCenterX(), camera.getOpticalCenterY());
+
+  applyTransformInCSS(paper2D[0], paper2D[1], paper2D[2], paper2D[3]);
+
+  // 1. Déterminer les coordonnées du rectangle dans l'espace 3D
+  const rectangle3D = [
+    { x: 0, y: 0, z: 0 },
+    { x: 100, y: 0, z: 0 },
+    { x: 100, y: 100, z: 0 },
+    { x: 0, y: 100, z: 0 }
+  ];
+
+  const rectangle2D = createRectangle2D(rectangle3D, rotationMatrix, camera.getFocalLength(), camera.getOpticalCenterX(), camera.getOpticalCenterY());
+
+  drawRectangle(rectangle2D, canvasContext);
   drawAxes(canvasContext, rotationMatrix, camera.getFocalLength(), camera.getOpticalCenterX(), camera.getOpticalCenterY());
-
-  const rectangle2D = createRectangle2D(rotationMatrix, camera.getFocalLength(), camera.getOpticalCenterX(), camera.getOpticalCenterY());
 
   let { dst, width, height } = calculatePerspectiveWrap(srcOpenCV, rectangle2D);
   drawCVImage(dst, width, height);
@@ -146,7 +161,6 @@ function handleMarker(marker, srcOpenCV, imageData) {
     drawLine(canvasContext, bottomRight, bottomLeft, '#FF3B58');
     drawLine(canvasContext, bottomLeft, topLeft, '#FF3B58');
 
-    console.log("marker: ", marker.data);
     decodedQRCodeElement.textContent = `Marker Data: ${marker.data}`;
 
     const rotationMatrix = estimatePose3D(camera.getFocalLength(), 40, topLeft, topRight, bottomRight, bottomLeft, canvasElement.width, canvasElement.height);
@@ -156,7 +170,14 @@ function handleMarker(marker, srcOpenCV, imageData) {
     drawRectangle(canvasContext, rotationMatrix, camera.getFocalLength(), camera.getOpticalCenterX(), camera.getOpticalCenterY());
     drawAxes(canvasContext, rotationMatrix, camera.getFocalLength(), camera.getOpticalCenterX(), camera.getOpticalCenterY());
 
-    const rectangle2D = createRectangle2D(rotationMatrix, camera.getFocalLength(), camera.getOpticalCenterX(), camera.getOpticalCenterY());
+    const rectangle3D = [
+      { x: 0, y: 0, z: 0 },
+      { x: 100, y: 0, z: 0 },
+      { x: 100, y: 100, z: 0 },
+      { x: 0, y: 100, z: 0 }
+    ];
+  
+    const rectangle2D = createRectangle2D(rectangle3D, rotationMatrix, camera.getFocalLength(), camera.getOpticalCenterX(), camera.getOpticalCenterY());
 
     let { dst, width, height } = calculatePerspectiveWrap(srcOpenCV, rectangle2D);
     drawCVImage(dst, width, height);
