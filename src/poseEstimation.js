@@ -190,6 +190,52 @@ function estimatePose3DFromMultipleMarkers(focalLength, detectedMarkers, markers
   return transformationMatrix;
 }
 
+
+function projectPointToPlane(imagePoint, cameraMatrix, transformationMatrix) {
+  // Extract camera parameters
+  const fx = cameraMatrix.data64F[0];
+  const fy = cameraMatrix.data64F[4];
+  const cx = cameraMatrix.data64F[2];
+  const cy = cameraMatrix.data64F[5];
+
+  // Convert image point to normalized image coordinates
+  const normalizedPoint = cv.matFromArray(3, 1, cv.CV_64F, [
+      (imagePoint.x - cx) / fx,
+      (imagePoint.y - cy) / fy,
+      1.0
+  ]);
+
+  // Transform normalized image point to camera coordinates
+  const cameraPoint = cv.matFromArray(4, 1, cv.CV_64F, [
+      normalizedPoint.data64F[0],
+      normalizedPoint.data64F[1],
+      normalizedPoint.data64F[2],
+      1.0
+  ]);
+
+  // Apply the inverse of the transformation matrix to the camera point to get the world coordinates
+  const inverseTransformationMatrix = new cv.Mat();
+  cv.invert(transformationMatrix, inverseTransformationMatrix);
+
+  const worldPoint = new cv.Mat();
+  cv.gemm(inverseTransformationMatrix, cameraPoint, 1, new cv.Mat(), 0, worldPoint);
+
+  // The world point is now in homogeneous coordinates, so we divide by the w component to get 3D coordinates
+  const worldPoint3D = {
+      x: worldPoint.data64F[0] / worldPoint.data64F[3],
+      y: worldPoint.data64F[1] / worldPoint.data64F[3],
+      z: worldPoint.data64F[2] / worldPoint.data64F[3]
+  };
+
+  return worldPoint3D;
+}
+
+// Example usage
+// const imagePoint = { x: 320, y: 240 }; // Example image point
+//const projectedPoint3D = projectPointToPlane(imagePoint, cameraMatrix, transformationMatrix);
+//console.log('Projected 3D Point:', projectedPoint3D);
+
+
 // https://math.stackexchange.com/questions/296794/finding-the-transform-matrix-from-4-projected-points-with-javascript
 // https://jsfiddle.net/zbh98nLv/
 

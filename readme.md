@@ -122,6 +122,14 @@ Expected content key 2d39cdf7c618ab5b to exist. Solution: `rm -rf .parcel-cache`
 
 Currently in Parcel github issue tracker: https://github.com/parcel-bundler/parcel/issues/8874 
 
+
+
+# Calibration 
+
+On the projector, open the page `calib.html`. Adjust the sliders and hit the save button.
+
+Open FFT.html and adjust the sliders to match the calibration, record the video and save the locations. 
+
 ## Acknowledgements
 
 * ChatGPT
