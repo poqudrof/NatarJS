@@ -1,4 +1,4 @@
-
+import { OneEuroFilter } from "./oneEuroFilter";
 
 function estimatePose3D(focalLength, markerSize, topLeft, topRight, bottomRight, bottomLeft, imageWidth, imageHeight) {
   const objectPoints = cv.matFromArray(4, 1, cv.CV_32FC3, [
@@ -48,6 +48,28 @@ function estimatePose3D(focalLength, markerSize, topLeft, topRight, bottomRight,
 
   return transformationMatrix;
 }
+
+
+
+
+let useFiltering = true;
+
+// Create an array of OneEuroFilter instances for x, y, and z coordinates and rotation matrix elements
+const freq = 30; // Example frequency, adjust as needed
+const mincutoff = 1.0;
+const beta = 0.0;
+const dcutoff = 1.0;
+
+// Filters for translation (x, y, z)
+const translationFilters = [
+  new OneEuroFilter(freq, mincutoff, beta, dcutoff), // For x
+  new OneEuroFilter(freq, mincutoff, beta, dcutoff), // For y
+  new OneEuroFilter(freq, mincutoff, beta, dcutoff)  // For z
+];
+
+// Filters for rotation matrix elements (9 elements in a 3x3 matrix)
+const rotationFilters = Array.from({ length: 9 }, () => new OneEuroFilter(freq, mincutoff, beta, dcutoff));
+
 
 
 function estimatePose3DFromMultipleMarkers(focalLength, detectedMarkers, markersJSON, imageWidth, imageHeight) {
@@ -113,22 +135,50 @@ function estimatePose3DFromMultipleMarkers(focalLength, detectedMarkers, markers
   const rvec = new cv.Mat();
   const tvec = new cv.Mat();
 
-  console.log("objectPoints: ", objectPoints);
-  console.log("imagePoints: ", imagePoints);
-
   // Solve PnP to estimate the pose
   cv.solvePnP(objectPointsMat, imagePointsMat, cameraMatrix, distCoeffs, rvec, tvec);
 
   const rotationMatrix = new cv.Mat();
   cv.Rodrigues(rvec, rotationMatrix);
 
-  // Combine rotation matrix and translation vector into 4x4 matrix
-  const transformationMatrix = cv.matFromArray(4, 4, cv.CV_64F, [
-    rotationMatrix.data64F[0], rotationMatrix.data64F[1], rotationMatrix.data64F[2], tvec.data64F[0],
-    rotationMatrix.data64F[3], rotationMatrix.data64F[4], rotationMatrix.data64F[5], tvec.data64F[1],
-    rotationMatrix.data64F[6], rotationMatrix.data64F[7], rotationMatrix.data64F[8], tvec.data64F[2],
-    0, 0, 0, 1
-  ]);
+  let transformationMatrix;
+
+  if(useFiltering) {
+    const timestamp = Date.now() / 1000; // Example timestamp in seconds
+
+    // Apply filters to each coordinate of the position
+    const filteredPosition = {
+      x: translationFilters[0].filter( tvec.data64F[0], timestamp),
+      y: translationFilters[1].filter( tvec.data64F[1], timestamp),
+      z: translationFilters[2].filter( tvec.data64F[2], timestamp)
+    };
+    
+
+    let rotationMatrixData = [rotationMatrix.data64F[0], rotationMatrix.data64F[1], rotationMatrix.data64F[2],
+                              rotationMatrix.data64F[3], rotationMatrix.data64F[4], rotationMatrix.data64F[5],
+                              rotationMatrix.data64F[6], rotationMatrix.data64F[7], rotationMatrix.data64F[8]]
+    // Apply filters to each element of the rotation matrix
+    const filteredRotationMatrixData = rotationMatrixData.map((value, index) => 
+      rotationFilters[index].filter(value, timestamp)
+    );
+    
+    // Combine filtered rotation matrix and translation vector into a 4x4 transformation matrix
+    transformationMatrix = cv.matFromArray(4, 4, cv.CV_64F, [
+      filteredRotationMatrixData[0], filteredRotationMatrixData[1], filteredRotationMatrixData[2], filteredPosition.x,
+      filteredRotationMatrixData[3], filteredRotationMatrixData[4], filteredRotationMatrixData[5], filteredPosition.y,
+      filteredRotationMatrixData[6], filteredRotationMatrixData[7], filteredRotationMatrixData[8], filteredPosition.z,
+      0, 0, 0, 1
+    ]);
+  
+  }else {
+    // Combine rotation matrix and translation vector into 4x4 matrix
+    transformationMatrix = cv.matFromArray(4, 4, cv.CV_64F, [
+      rotationMatrix.data64F[0], rotationMatrix.data64F[1], rotationMatrix.data64F[2], tvec.data64F[0],
+      rotationMatrix.data64F[3], rotationMatrix.data64F[4], rotationMatrix.data64F[5], tvec.data64F[1],
+      rotationMatrix.data64F[6], rotationMatrix.data64F[7], rotationMatrix.data64F[8], tvec.data64F[2],
+      0, 0, 0, 1
+    ]);
+  }
 
   rvec.delete();
   tvec.delete();
