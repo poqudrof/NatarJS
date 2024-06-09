@@ -1,4 +1,5 @@
 
+
 function estimatePose3D(focalLength, markerSize, topLeft, topRight, bottomRight, bottomLeft, imageWidth, imageHeight) {
   const objectPoints = cv.matFromArray(4, 1, cv.CV_32FC3, [
       -markerSize / 2, markerSize / 2, 0,
@@ -48,6 +49,96 @@ function estimatePose3D(focalLength, markerSize, topLeft, topRight, bottomRight,
   return transformationMatrix;
 }
 
+
+function estimatePose3DFromMultipleMarkers(focalLength, detectedMarkers, markersJSON, imageWidth, imageHeight) {
+  // Initialize arrays for object points and image points
+  let objectPoints = [];
+  let imagePoints = [];
+ 
+  // Loop through each marker and add its points to the arrays
+  detectedMarkers.forEach(marker => {
+
+    const matchingMarker = markersJSON.find(jsonMarker => {
+      const number = parseInt(jsonMarker.id.match(/\d+/)[0]);
+      return number === marker.id;
+    });
+    
+    if (!matchingMarker) {
+      return;
+    }
+  
+    const location = marker.location;
+    const topLeft = location.topLeftCorner;
+    const topRight = location.topRightCorner;
+    const bottomRight = location.bottomRightCorner;
+    const bottomLeft = location.bottomLeftCorner;
+
+    // 3D object points (marker corners in the marker's coordinate system)
+    // Using JSON data for marker size and coordinates
+    const objPts = [
+      matchingMarker.topLeft.x, matchingMarker.topLeft.y, 0,
+      matchingMarker.topRight.x, matchingMarker.topRight.y, 0,
+      matchingMarker.bottomRight.x, matchingMarker.bottomRight.y, 0,
+      matchingMarker.bottomLeft.x, matchingMarker.bottomLeft.y, 0
+    ];
+    objectPoints = objectPoints.concat(objPts);
+
+    // 2D image points (marker corners in the image)
+    const imgPts = [
+      topLeft.x, topLeft.y,
+      topRight.x, topRight.y,
+      bottomRight.x, bottomRight.y,
+      bottomLeft.x, bottomLeft.y
+    ];
+    imagePoints = imagePoints.concat(imgPts);
+  });
+
+  // If we don't have enough markers, return null
+  if (objectPoints.length < 12 || imagePoints.length < 8) {
+    return null;
+  }
+
+  // Convert arrays to OpenCV Mats
+  const objectPointsMat = cv.matFromArray(objectPoints.length / 3, 1, cv.CV_32FC3, objectPoints);
+  const imagePointsMat = cv.matFromArray(imagePoints.length / 2, 1, cv.CV_32FC2, imagePoints);
+
+  // Camera matrix
+  const cameraMatrix = cv.matFromArray(3, 3, cv.CV_64F, [
+    focalLength, 0, imageWidth / 2,
+    0, focalLength, imageHeight / 2,
+    0, 0, 1
+  ]);
+
+  const distCoeffs = cv.Mat.zeros(4, 1, cv.CV_64F);
+  const rvec = new cv.Mat();
+  const tvec = new cv.Mat();
+
+  console.log("objectPoints: ", objectPoints);
+  console.log("imagePoints: ", imagePoints);
+
+  // Solve PnP to estimate the pose
+  cv.solvePnP(objectPointsMat, imagePointsMat, cameraMatrix, distCoeffs, rvec, tvec);
+
+  const rotationMatrix = new cv.Mat();
+  cv.Rodrigues(rvec, rotationMatrix);
+
+  // Combine rotation matrix and translation vector into 4x4 matrix
+  const transformationMatrix = cv.matFromArray(4, 4, cv.CV_64F, [
+    rotationMatrix.data64F[0], rotationMatrix.data64F[1], rotationMatrix.data64F[2], tvec.data64F[0],
+    rotationMatrix.data64F[3], rotationMatrix.data64F[4], rotationMatrix.data64F[5], tvec.data64F[1],
+    rotationMatrix.data64F[6], rotationMatrix.data64F[7], rotationMatrix.data64F[8], tvec.data64F[2],
+    0, 0, 0, 1
+  ]);
+
+  rvec.delete();
+  tvec.delete();
+  rotationMatrix.delete();
+  cameraMatrix.delete();
+  distCoeffs.delete();
+  objectPointsMat.delete();
+  imagePointsMat.delete();
+  return transformationMatrix;
+}
 
 // https://math.stackexchange.com/questions/296794/finding-the-transform-matrix-from-4-projected-points-with-javascript
 // https://jsfiddle.net/zbh98nLv/
@@ -242,22 +333,27 @@ function detectArucoMarkers(srcOpenCV, imageData) {
   const ids = new cv.Mat();
   detector.detectMarkers(gray, corners, ids);
 
-  if (ids.rows > 0) {
-      // Draw the detected Aruco markers' contours
-      //cv.aruco_drawDetectedMarkers(src, corners, ids);
 
-      const markerCorners = corners.get(0).data32F;
-      return {
-          data: ids.data32S[0].toString(),
-          location: {
-              topLeftCorner: { x: markerCorners[0], y: markerCorners[1] },
-              topRightCorner: { x: markerCorners[2], y: markerCorners[3] },
-              bottomRightCorner: { x: markerCorners[4], y: markerCorners[5] },
-              bottomLeftCorner: { x: markerCorners[6], y: markerCorners[7] }
-          }
-      };
+  let markers = [];
+
+  for (let i = 0; i < ids.rows; i++) {
+    const markerId = ids.intAt(i, 0);
+    const markerCorners = corners.get(i).data32F;
+
+    markers.push({
+      id: markerId,
+      location: {
+        topLeftCorner: { x: markerCorners[0], y: markerCorners[1] },
+        topRightCorner: { x: markerCorners[2], y: markerCorners[3] },
+        bottomRightCorner: { x: markerCorners[4], y: markerCorners[5] },
+        bottomLeftCorner: { x: markerCorners[6], y: markerCorners[7] }
+      }
+    });
   }
-  // src.delete();
+
+  console.log("Aruco markers: ", markers);
+
+  // Clean up
   gray.delete();
   corners.delete();
   ids.delete();
@@ -266,8 +362,8 @@ function detectArucoMarkers(srcOpenCV, imageData) {
   detector.delete();
   dictionary.delete();
 
-  return null;
+  return markers;
 }
 
 // Export the functions 
-export { estimatePose3D, applyTransform, applyTransformInCSS, calculatePerspectiveWrap, drawCVImage, detectArucoMarkers};
+export { estimatePose3D, estimatePose3DFromMultipleMarkers, applyTransform, applyTransformInCSS, calculatePerspectiveWrap, drawCVImage, detectArucoMarkers};

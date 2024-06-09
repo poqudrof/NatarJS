@@ -1,10 +1,9 @@
 import jsQR from 'jsqr';
-import { estimatePose3D, applyTransformInCSS, calculatePerspectiveWrap, drawCVImage, detectArucoMarkers } from './src/poseEstimation';
+import { estimatePose3D, estimatePose3DFromMultipleMarkers, applyTransformInCSS, calculatePerspectiveWrap, drawCVImage, detectArucoMarkers } from './src/poseEstimation';
 import { drawLine, drawRectangle, drawAxes, createRectangle2D } from './src/drawing';
 import { setupCamera } from './src/camera';
+import { signInWithGoogle, signOutGoogle, auth, onAuthStateChanged, db, getDoc, setDoc, doc } from './src/firebase';
 
-import { signInWithGoogle, signOutGoogle, auth, 
-         onAuthStateChanged, db, getDoc, setDoc, doc } from './src/firebase';
 
 const videoElement = document.getElementById('webcam');
 const canvasElement = document.getElementById('canvas');
@@ -13,8 +12,6 @@ const canvasContext = canvasElement.getContext('2d', { willReadFrequently: true 
 const cameraSelect = document.getElementById('camera-select');
 const resolutionSelect = document.getElementById('resolution-select');
 const markerTypeSelect = document.getElementById('marker-type-select');
-const startCameraButton = document.getElementById('start-camera');
-const stopCameraButton = document.getElementById('stop-camera');
 const decodedQRCodeElement = document.getElementById('decoded-qrcode');
 
 const focalLengthSlider = document.getElementById('focalLength');
@@ -35,6 +32,15 @@ function detectQRCode(imageData) {
     return null;
 }
 
+let logged_user;
+let markerPositions;
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+      logged_user = user;
+      getDoc(doc(db, 'users', logged_user.uid)).then((doc) => { markerPositions = doc.data().markerList; });
+  } } );
+
 function tick() {
     if (camera.isDrawing() && videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
         canvasElement.height = videoElement.videoHeight;
@@ -52,9 +58,10 @@ function tick() {
         }
 
         let marker;
+        let markers;
         if (markerTypeSelect.value === 'aruco') {
             try {
-                marker = detectArucoMarkers(srcOpenCV, imageData);
+                markers = detectArucoMarkers(srcOpenCV, imageData);
             } catch (error) {
                 console.error('Error detecting Aruco markers.', error);
                 requestAnimationFrame(tick);
@@ -64,14 +71,68 @@ function tick() {
             marker = detectQRCode(imageData);
         }
 
-        if (marker) {
-            handleMarker(marker, srcOpenCV, imageData);
+        if (markers) {
+          handleMultiMarker(markers, srcOpenCV, imageData);
         } else {
-            decodedQRCodeElement.textContent = 'Marker Data: N/A';
+          decodedQRCodeElement.textContent = 'Marker Data: N/A';
         }
+
+        // if (marker) {
+        //     handleMarker(marker, srcOpenCV, imageData);
+        // } else {
+        //     decodedQRCodeElement.textContent = 'Marker Data: N/A';
+        // }
     }
     requestAnimationFrame(tick);
 }
+
+function handleMultiMarker(markers, srcOpenCV, imageData) {
+
+  console.log("markers in handle: ", markers);
+
+  let markerIds = [];
+  markers.forEach(marker => {
+    const location = marker.location;
+    const topLeft = location.topLeftCorner;
+    const topRight = location.topRightCorner;
+    const bottomRight = location.bottomRightCorner;
+    const bottomLeft = location.bottomLeftCorner;
+
+    drawLine(canvasContext, topLeft, topRight, '#FF3B58');
+    drawLine(canvasContext, topRight, bottomRight, '#FF3B58');
+    drawLine(canvasContext, bottomRight, bottomLeft, '#FF3B58');
+    drawLine(canvasContext, bottomLeft, topLeft, '#FF3B58');
+
+    markerIds.push(marker.id);
+  });
+
+  console.log("markerIds: ", markerIds);
+  console.log("markerPositions: ", markerPositions);
+  decodedQRCodeElement.textContent = `Marker Data: ${markerIds}`;
+
+  const rotationMatrix = estimatePose3DFromMultipleMarkers(camera.getFocalLength(), markers, markerPositions, canvasElement.width, canvasElement.height);
+
+  // if rotationMatrix is null, then we don't have enough markers to estimate pose
+  if (!rotationMatrix) {
+    srcOpenCV.delete();
+    return;
+  }
+
+  // Now the Corners need to be computed... 
+  // applyTransformInCSS(topLeft, topRight, bottomRight, bottomLeft);
+
+  drawRectangle(canvasContext, rotationMatrix, camera.getFocalLength(), camera.getOpticalCenterX(), camera.getOpticalCenterY());
+  drawAxes(canvasContext, rotationMatrix, camera.getFocalLength(), camera.getOpticalCenterX(), camera.getOpticalCenterY());
+
+  const rectangle2D = createRectangle2D(rotationMatrix, camera.getFocalLength(), camera.getOpticalCenterX(), camera.getOpticalCenterY());
+
+  let { dst, width, height } = calculatePerspectiveWrap(srcOpenCV, rectangle2D);
+  drawCVImage(dst, width, height);
+  dst.delete();
+
+  srcOpenCV.delete();
+}
+
 
 function handleMarker(marker, srcOpenCV, imageData) {
     const location = marker.location;
