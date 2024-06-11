@@ -1,5 +1,8 @@
 import jsQR from 'jsqr';
-import { estimatePose3D, estimatePose3DFromMultipleMarkers, applyTransformInCSS, calculatePerspectiveWrap, drawCVImage, detectArucoMarkers } from './src/poseEstimation';
+import { estimatePose3D, estimatePose3DFromMultipleMarkers, 
+          serializeTransformationMatrix, deserializeTransformationMatrix, 
+          applyTransformInCSS, calculatePerspectiveWrap,
+          drawCVImage, detectArucoMarkers } from './src/poseEstimation';
 import { drawLine, drawRectangle, drawAxes, createRectangle2D } from './src/drawing';
 import { setupCamera } from './src/camera';
 import { signInWithGoogle, signOutGoogle, auth, onAuthStateChanged, db, getDoc, setDoc, doc } from './src/firebase';
@@ -86,6 +89,26 @@ function tick() {
     requestAnimationFrame(tick);
 }
 
+let rotationMatrixSave = null;
+
+const savePoseButton = document.getElementById('save-pose');
+if (savePoseButton) {
+  savePoseButton.addEventListener('click', async () => {
+    const user = auth.currentUser;
+    if (user) {
+      try {        
+        const pose = serializeTransformationMatrix(rotationMatrixSave);
+        await setDoc(doc(db, 'users', user.uid), { poseMatrix: pose }, { merge: true });
+        console.log('Pose saved successfully');
+      } catch (error) {
+        console.error('Error saving pose:', error);
+      }
+    } else {
+      console.log('No user is signed in');
+    }
+  });
+}
+
 function handleMultiMarker(markers, srcOpenCV, imageData) {
 
   let markerIds = [];
@@ -106,7 +129,10 @@ function handleMultiMarker(markers, srcOpenCV, imageData) {
 
   decodedQRCodeElement.textContent = `Marker Data: ${markerIds}`;
 
-  const rotationMatrix = estimatePose3DFromMultipleMarkers(camera.getFocalLength(), markers, markerPositions, canvasElement.width, canvasElement.height);
+  const rotationMatrix = estimatePose3DFromMultipleMarkers(camera.getFocalLength(), 
+                                                          markers, markerPositions,
+                                                          canvasElement.width, canvasElement.height);
+  rotationMatrixSave = rotationMatrix;
 
   // if rotationMatrix is null, then we don't have enough markers to estimate pose
   if (!rotationMatrix) {

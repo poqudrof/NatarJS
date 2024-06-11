@@ -1,12 +1,13 @@
 import { FFT } from './fft.js';
 import { signInWithGoogle, signOutGoogle, auth, onAuthStateChanged, db, getDoc, setDoc, doc } from './src/firebase';
 
+import { startFirebaseWebcam, stopCamera } from './src/camFire.js';
+
 const video = document.getElementById('video');
 const constraints = { video: true };
 const fpsDisplay = document.getElementById('fpsValue');
 const frameCountDisplay = document.getElementById('frameCountValue');
-const canvasOutput = document.getElementById('canvasOutput');
-const contextOutput = canvasOutput.getContext('2d');
+
 const startButton = document.getElementById('startButton');
 const stopButton = document.getElementById('stopButton');
 const averageFPSDisplay = document.getElementById('averageFPSValue');
@@ -21,6 +22,8 @@ let logged_user;
 
 // Working with  1Hz, p 0.4Hz Step, 512 frames
 
+let canvasOutput;
+let contextOutput;
 
 document.getElementById('google-signin-button').addEventListener('click', () => {
   signInWithGoogle();
@@ -36,6 +39,26 @@ onAuthStateChanged(auth, (user) => {
       document.getElementById('google-signin-button').style.display = 'none';
       document.getElementById('google-signout-button').style.display = 'block';
       document.getElementById('user-name').innerText = `Welcome, ${user.displayName}`;
+      startFirebaseWebcam(video).then((res) => {
+        width = res.width;
+        height = res.height;
+
+        // Create a canvas element
+        const canvasOutput = document.createElement('canvas');
+
+        console.log("Setting canvas... ", width, height)
+        canvasOutput.width = width;
+        canvasOutput.height = height;
+
+        // Optionally, set the styles for the canvasOutput
+        canvasOutput.style.width = `${width}px`;
+        canvasOutput.style.height = `${height}px`;
+
+        // Append the canvasOutput to the body
+        contextOutput = canvasOutput.getContext('2d');
+        document.body.appendChild(canvasOutput);
+      });
+
   } else {
       document.getElementById('google-signin-button').style.display = 'block';
       document.getElementById('google-signout-button').style.display = 'none';
@@ -47,14 +70,17 @@ onAuthStateChanged(auth, (user) => {
 
 startButton.addEventListener('click', startRecording);
 stopButton.addEventListener('click', stopRecording);
+// Use startWebcam instead 
+// Load user Data nda load webcam 
+// startWebcam()
 
-navigator.mediaDevices.getUserMedia(constraints)
-    .then(stream => {
-        video.srcObject = stream;
-    })
-    .catch(err => {
-        console.error('Error accessing webcam: ', err);
-    });
+// navigator.mediaDevices.getUserMedia(constraints)
+//     .then(stream => {
+//         video.srcObject = stream;
+//     })
+//     .catch(err => {
+//         console.error('Error accessing webcam: ', err);
+//     });
 
 function startRecording() {
     recording = true;
@@ -107,10 +133,13 @@ async function processImages() {
     const width = images[0].width;
     const height = images[0].height;
 
+    console.log("Processing images... ", width, height) 
+    // TODO: This must have the same size as the camera... 
     const frequencyMap = contextOutput.createImageData(width, height);
     const significantFrequencies = [];
 
     for (let r = 0; r < height; r++) {
+        console.log("Processing row... ", r)
         for (let c = 0; c < width; c++) {
             let pixelSeries = [];
             for (let k = 0; k < images.length; k++) {
@@ -135,6 +164,10 @@ async function processImages() {
             }
 
             let freq = maxIdx / maxImages * computedFPS;  // Use computed FPS
+            const simpleColor = getSimpleColorFromFrequency(freq, maxVal);
+            // console.log("Simple color... ", simpleColor)
+            contextOutput.fillStyle = `rgb(${simpleColor[0]}, ${simpleColor[1]}, ${simpleColor[2]})`;
+            contextOutput.fillRect(c, r, 1, 1);
 
             if (maxVal > 0.10) {
                 significantFrequencies.push({ x: c, y: r, frequency: freq, amplitude: maxVal });
@@ -150,9 +183,9 @@ async function processImages() {
         }
     }
 
+
     contextOutput.putImageData(frequencyMap, 0, 0);
 
-    if (significantFrequencies.length > 0) {
         const frequencies = significantFrequencies.map(frequency => frequency.frequency);
         const uniqueFrequencies = [...new Set(frequencies)];
 
@@ -164,15 +197,17 @@ async function processImages() {
 
         drawCenters(centers);
 
+    if (significantFrequencies.length > 0) {
         await saveCentersToFirestore(centers);
     } else {
-        console.log('No significant frequencies found');
+         console.log('No significant frequencies found');
     }
 }
 
 async function saveCentersToFirestore(centers) {
   await setDoc(doc(db, 'users', logged_user.uid), { fftCenters: centers }, { merge: true });
 }
+
 
 function getColorFromFrequency(freq, amplitude) {
     const maxAmplitude = 1;
@@ -192,6 +227,24 @@ function getColorFromFrequency(freq, amplitude) {
 
     return [blue, green, red];
 }
+
+
+function getSimpleColorFromFrequency(freq, amplitude) {
+  const maxFrequency = 30;
+  const minAmplitude = 0.10;
+
+  // Normalize frequency
+  let normFrequency = freq / maxFrequency;
+  let red = normFrequency * 255;
+
+  let blue = (1 - normFrequency) * 255;
+  let green = 0;
+  return [blue, green, red];
+
+}
+
+
+ 
 
 function calculateCenter(points, freq) {
     let sumX = 0;

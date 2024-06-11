@@ -190,20 +190,38 @@ function estimatePose3DFromMultipleMarkers(focalLength, detectedMarkers, markers
   return transformationMatrix;
 }
 
+// Function to serialize the transformation matrix to JSON
+function serializeTransformationMatrix(matrix) {
+  const array = [];
+  for (let i = 0; i < matrix.rows; i++) {
+    for (let j = 0; j < matrix.cols; j++) {
+      array.push(matrix.doubleAt(i, j));
+    }
+  }
+  return JSON.stringify(array);
+}
 
-function projectPointToPlane(imagePoint, cameraMatrix, transformationMatrix) {
+// Function to deserialize the transformation matrix from JSON
+function deserializeTransformationMatrix(json) {
+  const array = JSON.parse(json);
+  return cv.matFromArray(4, 4, cv.CV_64F, array);
+}
+
+
+function projectPointToPlane(imagePoint, cam, transformationMatrix) {
+
   // Extract camera parameters
-  const fx = cameraMatrix.data64F[0];
-  const fy = cameraMatrix.data64F[4];
-  const cx = cameraMatrix.data64F[2];
-  const cy = cameraMatrix.data64F[5];
+  let { width, height, cx, cy, fx, fy } = cam;
 
+  console.log(imagePoint.x, imagePoint.y, width, height, cx, cy, fx, fy)
   // Convert image point to normalized image coordinates
   const normalizedPoint = cv.matFromArray(3, 1, cv.CV_64F, [
       (imagePoint.x - cx) / fx,
       (imagePoint.y - cy) / fy,
       1.0
   ]);
+
+  console.log("normalized", normalizedPoint.data64F[0], normalizedPoint.data64F[1], normalizedPoint.data64F[2])
 
   // Transform normalized image point to camera coordinates
   const cameraPoint = cv.matFromArray(4, 1, cv.CV_64F, [
@@ -214,12 +232,13 @@ function projectPointToPlane(imagePoint, cameraMatrix, transformationMatrix) {
   ]);
 
   // Apply the inverse of the transformation matrix to the camera point to get the world coordinates
-  const inverseTransformationMatrix = new cv.Mat();
-  cv.invert(transformationMatrix, inverseTransformationMatrix);
+  //const inverseTransformationMatrix = new cv.Mat();
+  //cv.invert(transformationMatrix, inverseTransformationMatrix);
 
   const worldPoint = new cv.Mat();
-  cv.gemm(inverseTransformationMatrix, cameraPoint, 1, new cv.Mat(), 0, worldPoint);
+  cv.gemm(transformationMatrix, cameraPoint, 1, new cv.Mat(), 0, worldPoint);
 
+  // onsole.log("world", worldPoint.data64F[0], worldPoint.data64F[1], worldPoint.data64F[2], worldPoint.data64F[3])
   // The world point is now in homogeneous coordinates, so we divide by the w component to get 3D coordinates
   const worldPoint3D = {
       x: worldPoint.data64F[0] / worldPoint.data64F[3],
@@ -460,4 +479,8 @@ function detectArucoMarkers(srcOpenCV, imageData) {
 }
 
 // Export the functions 
-export { estimatePose3D, estimatePose3DFromMultipleMarkers, applyTransform, applyTransformInCSS, calculatePerspectiveWrap, drawCVImage, detectArucoMarkers};
+export { estimatePose3D, estimatePose3DFromMultipleMarkers,
+  serializeTransformationMatrix, deserializeTransformationMatrix,
+   applyTransform, projectPointToPlane, 
+   applyTransformInCSS, calculatePerspectiveWrap,
+   drawCVImage, detectArucoMarkers};
