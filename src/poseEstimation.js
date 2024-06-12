@@ -207,6 +207,12 @@ function deserializeTransformationMatrix(json) {
   return cv.matFromArray(4, 4, cv.CV_64F, array);
 }
 
+// Function to deserialize the transformation matrix from JSON
+function deserializeTransformationMatrix3x3(json) {
+  const array = JSON.parse(json);
+  return cv.matFromArray(3, 3, cv.CV_64F, array);
+}
+
 
 function projectPointToPlane(imagePoint, cam, transformationMatrix) {
 
@@ -215,38 +221,99 @@ function projectPointToPlane(imagePoint, cam, transformationMatrix) {
 
   console.log(imagePoint.x, imagePoint.y, width, height, cx, cy, fx, fy)
   // Convert image point to normalized image coordinates
-  const normalizedPoint = cv.matFromArray(3, 1, cv.CV_64F, [
+  const point2DHomogeneous = cv.matFromArray(3, 1, cv.CV_64F, [
       (imagePoint.x - cx) / fx,
       (imagePoint.y - cy) / fy,
       1.0
   ]);
 
-  console.log("normalized", normalizedPoint.data64F[0], normalizedPoint.data64F[1], normalizedPoint.data64F[2])
+  //console.log("normalized", point2DHomogeneous.data64F[0], point2DHomogeneous.data64F[1], point2DHomogeneous.data64F[2])
 
   // Transform normalized image point to camera coordinates
   const cameraPoint = cv.matFromArray(4, 1, cv.CV_64F, [
-      normalizedPoint.data64F[0],
-      normalizedPoint.data64F[1],
-      normalizedPoint.data64F[2],
+      point2DHomogeneous.data64F[0],
+      point2DHomogeneous.data64F[1],
+      point2DHomogeneous.data64F[2],
       1.0
   ]);
 
-  // Apply the inverse of the transformation matrix to the camera point to get the world coordinates
-  //const inverseTransformationMatrix = new cv.Mat();
-  //cv.invert(transformationMatrix, inverseTransformationMatrix);
+  // // Apply the inverse of the transformation matrix to the camera point to get the world coordinates
+  // const inverseTransformationMatrix = new cv.Mat();
+  // cv.invert(transformationMatrix, inverseTransformationMatrix);
 
-  const worldPoint = new cv.Mat();
-  cv.gemm(transformationMatrix, cameraPoint, 1, new cv.Mat(), 0, worldPoint);
+  // const worldPoint = new cv.Mat();
+  // // cv.gemm(transformationMatrix, cameraPoint, 1, new cv.Mat(), 0, worldPoint);
+  // cv.gemm(inverseTransformationMatrix, cameraPoint, 1, new cv.Mat(), 0, worldPoint);
 
-  // onsole.log("world", worldPoint.data64F[0], worldPoint.data64F[1], worldPoint.data64F[2], worldPoint.data64F[3])
-  // The world point is now in homogeneous coordinates, so we divide by the w component to get 3D coordinates
-  const worldPoint3D = {
-      x: worldPoint.data64F[0] / worldPoint.data64F[3],
-      y: worldPoint.data64F[1] / worldPoint.data64F[3],
-      z: worldPoint.data64F[2] / worldPoint.data64F[3]
-  };
+  // console.log("world", worldPoint.data64F[0], worldPoint.data64F[1], worldPoint.data64F[2], worldPoint.data64F[3])
+  // // The world point is now in homogeneous coordinates, so we divide by the w component to get 3D coordinates
+  // const worldPoint3D = {
+  //     x: worldPoint.data64F[0] / worldPoint.data64F[3],
+  //     y: worldPoint.data64F[1] / worldPoint.data64F[3],
+  //     z: worldPoint.data64F[2] / worldPoint.data64F[3]
+  // };
 
-  return worldPoint3D;
+
+  // TODO: Use this instead... 
+    // Extract the 3x3 rotation matrix from the transformation matrix
+    const rotationMatrix = new cv.Mat(3, 3, cv.CV_64F);
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        rotationMatrix.data64F[i * 3 + j] = transformationMatrix.data64F[i * 4 + j];
+      }
+    }
+    
+    // Extract the translation vector from the transformation matrix
+    const tvec = new cv.Mat(3, 1, cv.CV_64F);
+    for (let i = 0; i < 3; i++) {
+      tvec.data64F[i] = transformationMatrix.data64F[i * 4 + 3];
+    }
+
+    // Invert the rotation matrix
+    let rotationMatrixInv = new cv.Mat();
+    cv.invert(rotationMatrix, rotationMatrixInv, cv.DECOMP_SVD);
+
+    // Transform the point to the marker coordinate system
+    let markerPlaneNormal = new cv.Mat();
+    cv.gemm(rotationMatrixInv, new cv.Mat(3, 1, cv.CV_64FC1, [0, 0, 1]), 1, new cv.Mat(), 0, markerPlaneNormal);
+
+    let markerPlanePoint = new cv.Mat();
+    let negTvec = new cv.Mat();
+    cv.multiply(tvec, new cv.Mat(tvec.rows, tvec.cols, tvec.type(), -1), negTvec);
+    cv.gemm(rotationMatrixInv, negTvec, 1, new cv.Mat(), 0, markerPlanePoint);
+
+    // Calculate the intersection of the ray with the marker plane
+    let scaleFactor = cv.Mat.zeros(1, 1, cv.CV_64F);
+    let dotProduct1 = cv.Mat.zeros(1, 1, cv.CV_64F);
+    let dotProduct2 = cv.Mat.zeros(1, 1, cv.CV_64F);
+
+    cv.gemm(markerPlaneNormal, markerPlanePoint, 1, new cv.Mat(), 0, dotProduct1, cv.GEMM_1_T);
+    cv.gemm(markerPlaneNormal, point2DHomogeneous, 1, new cv.Mat(), 0, dotProduct2, cv.GEMM_1_T);
+
+    cv.divide(dotProduct1, dotProduct2, scaleFactor);
+
+    let intersectionPoint = new cv.Mat();
+   
+    cv.gemm(point2DHomogeneous, scaleFactor, 1, new cv.Mat(), 0, intersectionPoint);
+
+    // log intersection point
+    console.log("intersectionPoint", intersectionPoint.data64F[0], intersectionPoint.data64F[1], intersectionPoint.data64F[2], intersectionPoint.data64F[3])
+    // Clean up
+    point2DHomogeneous.delete();
+    pointsArray.delete();
+    undistortedPoints.delete();
+    rotationMatrix.delete();
+    rotationMatrixInv.delete();
+    markerPlaneNormal.delete();
+    markerPlanePoint.delete();
+    negTvec.delete();
+    scaleFactor.delete();
+    dotProduct1.delete();
+    dotProduct2.delete();
+
+    return intersectionPoint;
+
+  // return worldPoint3D;
 }
 
 // Example usage
@@ -478,9 +545,25 @@ function detectArucoMarkers(srcOpenCV, imageData) {
   return markers;
 }
 
+
+  // Function to apply homography to a point
+function applyHomography(H, point) {
+  let pointMat = cv.matFromArray(3, 1, cv.CV_64F, [point[0], point[1], point[2]]);
+  let transformedPointMat = new cv.Mat();
+  cv.gemm(H, pointMat, 1, new cv.Mat(), 0, transformedPointMat);
+  let w = transformedPointMat.data64F[2];
+  let x = transformedPointMat.data64F[0] / w;
+  let y = transformedPointMat.data64F[1] / w;
+  pointMat.delete();
+  transformedPointMat.delete();
+  return [x, y];
+}
+
+
 // Export the functions 
 export { estimatePose3D, estimatePose3DFromMultipleMarkers,
   serializeTransformationMatrix, deserializeTransformationMatrix,
+  deserializeTransformationMatrix3x3, applyHomography,
    applyTransform, projectPointToPlane, 
    applyTransformInCSS, calculatePerspectiveWrap,
    drawCVImage, detectArucoMarkers};

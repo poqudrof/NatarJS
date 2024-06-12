@@ -32,9 +32,10 @@ async function startFirebaseWebcam(videoElement) {
           console.log("Loading camera with resolution: ", width, height)
           console.log("Optical center: ", opticalCenterX, opticalCenterY)
           console.log("Focal length: ", focalLength)
+          console.log("device id: ", userConfig.camera)
           const constraints = {
               video: {
-                  deviceId: userConfig.deviceId ? { exact: userConfig.deviceId } : undefined,
+                  deviceId: userConfig.camera ? { exact: userConfig.camera } : undefined,
                   width: { ideal: width },
                   height: { ideal: height },
                   facingMode: 'environment'

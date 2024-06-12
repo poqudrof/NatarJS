@@ -1,9 +1,13 @@
 
 import { auth, db, signInWithGoogle, signOutGoogle, onAuthStateChanged, setDoc, getDoc, doc } from './src/firebase';
 
+// <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+
+// import { cv } from 'opencv.js';
+
 import { estimatePose3D, estimatePose3DFromMultipleMarkers, 
   serializeTransformationMatrix, deserializeTransformationMatrix, 
-  projectPointToPlane,
+  projectPointToPlane, applyHomography,
   applyTransformInCSS, calculatePerspectiveWrap,
   drawCVImage, detectArucoMarkers } from './src/poseEstimation';
 
@@ -59,15 +63,15 @@ async function loadDocs(){
       const freqDiff = Math.abs(frequency - center.freq);
       //console.log("center... ", center.x, center.y, center.freq)
       // console.log("diff... ", freqDiff)
-      if (freqDiff < 0.1) {
+      if (freqDiff < 0.05) {
 
         // TODO: Matching not working well. 
         // Projecting not working well either. 
 
         let cameraPoint = {x: center.x, y: center.y};
-        console.log("cameraPoint... ", cameraPoint)
+        //console.log("cameraPoint... ", cameraPoint)
         const worldPoint = projectPointToPlane(cameraPoint, cam, transformationMatrix);
-        console.log("worldPoint... ", worldPoint)
+        //console.log("worldPoint... ", worldPoint)
 
         matches.push({
           projectorPoint: { x, y, frequency },
@@ -85,10 +89,7 @@ async function loadDocs(){
   findHomography(matches)
 }
 
-
-
 function findHomography(matches) {
-
   let objectPointsData = [];
   let imagePointsData = [];
 
@@ -97,8 +98,8 @@ function findHomography(matches) {
     objectPointsData.push(match.worldPoint.x, match.worldPoint.y, match.worldPoint.z);
     imagePointsData.push(match.cameraPoint.x, match.cameraPoint.y);
 
-    console.log("Object Point: ", match.worldPoint.x, match.worldPoint.y, match.worldPoint.z);
-    console.log("Image Point: ", match.cameraPoint.x, match.cameraPoint.y);
+    //console.log("Object Point: ", match.worldPoint.x, match.worldPoint.y, match.worldPoint.z);
+    //console.log("Image Point: ", match.cameraPoint.x, match.cameraPoint.y);
   });
 
 
@@ -110,23 +111,38 @@ function findHomography(matches) {
   let H = cv.findHomography(objectPoints, imagePoints);
   console.log("Homography Matrix:\n", H.data64F);
 
-  // Function to apply homography to a point
-  function applyHomography(H, point) {
-      let pointMat = cv.matFromArray(3, 1, cv.CV_64F, [point[0], point[1], 1.0]);
-      let transformedPointMat = new cv.Mat();
-      cv.gemm(H, pointMat, 1, new cv.Mat(), 0, transformedPointMat);
-      let w = transformedPointMat.data64F[2];
-      let x = transformedPointMat.data64F[0] / w;
-      let y = transformedPointMat.data64F[1] / w;
-      pointMat.delete();
-      transformedPointMat.delete();
-      return [x, y];
-  }
+  let p = { x: matches[0].worldPoint.x, y: matches[0].worldPoint.y, z: matches[0].worldPoint.z };
 
   // Example point on the 3D plane
-  let point3D = [0.5, 0.5, 300];
+  // let point3D = [0.5, 0.5, -300];
+  console.log("3D Point:\n", p);
+  let point3D = [p.x, p.y, p.z]; 
   let point2D = applyHomography(H, point3D);
   console.log("Transformed 2D Point:\n", point2D);
+
+  let circle = document.getElementById('circle1');
+
+  console.log(point2D, point2D.y)
+  circle.style.left = point2D[0] + 'px';
+  circle.style.top = point2D[1] + 'px';
+  
+
+  console.log("3D Point:\n", p);
+  point3D = [p.x - 0.2, p.y, p.z]; 
+  point2D = applyHomography(H, point3D);
+  console.log("Transformed 2D Point:\n", point2D);
+  circle = document.getElementById('circle2');
+
+  console.log(point2D, point2D.y)
+  circle.style.left = point2D[0] + 'px';
+  circle.style.top = point2D[1] + 'px';
+  
+  // Example: Setting the circle at position (100, 150)
+
+
+  const pose = serializeTransformationMatrix(H);
+  setDoc(doc(db, 'users', logged_user.uid), { tableHomography: pose }, { merge: true });
+  console.log('TableHomography saved successfully');
 
   // Cleanup
   objectPoints.delete();
