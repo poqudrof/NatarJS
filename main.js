@@ -1,5 +1,6 @@
 import jsQR from 'jsqr';
 import { estimatePose3D, estimatePose3DFromMultipleMarkers, 
+          calibrateCamera,
           serializeTransformationMatrix, deserializeTransformationMatrix, 
           applyTransformInCSS, calculatePerspectiveWrap,
           drawCVImage, detectArucoMarkers } from './src/poseEstimation';
@@ -90,6 +91,7 @@ function tick() {
 }
 
 let rotationMatrixSave = null;
+let markersSave = [];
 
 const savePoseButton = document.getElementById('save-pose');
 if (savePoseButton) {
@@ -108,6 +110,18 @@ if (savePoseButton) {
     }
   });
 }
+
+//<button id="calib-cam">CalibrateCamera</button>
+const calibrateCamButton = document.getElementById('calib-cam');
+if (calibrateCamButton) {
+  calibrateCamButton.addEventListener('click', async () => {
+    // Add your calibration logic here
+
+    calibrateCamera();
+  });
+}
+
+
 
 function handleMultiMarker(markers, srcOpenCV, imageData) {
 
@@ -134,12 +148,19 @@ function handleMultiMarker(markers, srcOpenCV, imageData) {
                                                           canvasElement.width, canvasElement.height);
   rotationMatrixSave = rotationMatrix;
 
+
+  markersSave = markers;
   // if rotationMatrix is null, then we don't have enough markers to estimate pose
   if (!rotationMatrix) {
     srcOpenCV.delete();
     return;
   }
 
+    // <div id="distance">Distance: N/A</div>
+  const distanceElement = document.getElementById('distance');
+  const distance = rotationMatrix.data64F[11];
+  distanceElement.textContent = `Distance: ${distance.toFixed(2)} mm`;
+  
   // Now the Corners need to be computed... 
 
   // 1. Déterminer les coordonnées du rectangle dans l'espace 3D

@@ -11,6 +11,10 @@ import { estimatePose3D, estimatePose3DFromMultipleMarkers,
   applyTransformInCSS, calculatePerspectiveWrap,
   drawCVImage, detectArucoMarkers } from './src/poseEstimation';
 
+// TODO: 
+// Nouvelle page avec : 
+// Centres + FFT calculés 
+// Tracking Aruco, et projection des coins sur la feuille. 
 
 let logged_user;
 
@@ -24,6 +28,8 @@ onAuthStateChanged(auth, (user) => {
 });
 
 
+
+
 async function loadDocs(){
   const cameraConfigDoc = await getDoc(doc(db, 'users', logged_user.uid));
   
@@ -33,6 +39,15 @@ async function loadDocs(){
   
   const matches = [];
   const blinkingCircles = data.blinkingCircles;
+
+  blinkingCircles.forEach((circle, i) => {
+    const { x, y } = circle;
+    const gridId = `grid-${i}`;
+    const gridCircle = document.getElementById(gridId);
+    gridCircle.style.left = x + 'px';
+    gridCircle.style.top = y + 'px';
+  });
+
   const fftCenters = data.fftCenters;
   const pose = data.poseMatrix; 
 
@@ -57,26 +72,22 @@ async function loadDocs(){
   blinkingCircles.forEach(circle => {
     const { x, y, frequency } = circle;
 
-    // console.log("circle... ", x, y, frequency)
-
     fftCenters.forEach(center => {
       const freqDiff = Math.abs(frequency - center.freq);
-      //console.log("center... ", center.x, center.y, center.freq)
-      // console.log("diff... ", freqDiff)
+
       if (freqDiff < 0.05) {
 
         // TODO: Matching not working well. 
         // Projecting not working well either. 
-
+        
+        // Seen by the camera
         let cameraPoint = {x: center.x, y: center.y};
-        //console.log("cameraPoint... ", cameraPoint)
-        const worldPoint = projectPointToPlane(cameraPoint, cam, transformationMatrix);
-        //console.log("worldPoint... ", worldPoint)
-
+        const paperPoint = projectPointToPlane(cameraPoint, cam, transformationMatrix);
+ 
         matches.push({
           projectorPoint: { x, y, frequency },
           cameraPoint: { x: center.x, y: center.y, freq: center.freq },
-          worldPoint, 
+          paperPoint, 
           freqDiff
         });
 
@@ -90,62 +101,49 @@ async function loadDocs(){
 }
 
 function findHomography(matches) {
-  let objectPointsData = [];
-  let imagePointsData = [];
+  let originPointsData = [];
+  let targetPointsData = [];
 
   matches.forEach(match => {
-
-    objectPointsData.push(match.worldPoint.x, match.worldPoint.y, match.worldPoint.z);
-    imagePointsData.push(match.cameraPoint.x, match.cameraPoint.y);
-
-    //console.log("Object Point: ", match.worldPoint.x, match.worldPoint.y, match.worldPoint.z);
-    //console.log("Image Point: ", match.cameraPoint.x, match.cameraPoint.y);
+    originPointsData.push(match.paperPoint[0], match.paperPoint[1]);
+    targetPointsData.push(match.cameraPoint.x, match.cameraPoint.y);
   });
 
+    // Creating the originPoints and targetPoints matrices
+  let originPoints = cv.matFromArray(matches.length, 1, cv.CV_32FC2, originPointsData);
+  let targetPoints = cv.matFromArray(matches.length, 1, cv.CV_32FC2, targetPointsData);
 
-    // Creating the objectPoints and imagePoints matrices
-  let objectPoints = cv.matFromArray(matches.length, 1, cv.CV_32FC3, objectPointsData);
-  let imagePoints = cv.matFromArray(matches.length, 1, cv.CV_32FC2, imagePointsData);
-
-  // Compute the homography matrix
-  let H = cv.findHomography(objectPoints, imagePoints);
+  // Compute the homography matrix Paper -> Camera ?
+  let H = cv.findHomography(originPoints, targetPoints);
   console.log("Homography Matrix:\n", H.data64F);
 
-  let p = { x: matches[0].worldPoint.x, y: matches[0].worldPoint.y, z: matches[0].worldPoint.z };
+  let originX = 0;
+  let originY = 0;
+  let w =  297 /2; 
+  let h =  210 /2;
 
-  // Example point on the 3D plane
-  // let point3D = [0.5, 0.5, -300];
-  console.log("3D Point:\n", p);
-  let point3D = [p.x, p.y, p.z]; 
-  let point2D = applyHomography(H, point3D);
-  console.log("Transformed 2D Point:\n", point2D);
-
-  let circle = document.getElementById('circle1');
-
-  console.log(point2D, point2D.y)
-  circle.style.left = point2D[0] + 'px';
-  circle.style.top = point2D[1] + 'px';
-  
-
-  console.log("3D Point:\n", p);
-  point3D = [p.x - 0.2, p.y, p.z]; 
-  point2D = applyHomography(H, point3D);
-  console.log("Transformed 2D Point:\n", point2D);
-  circle = document.getElementById('circle2');
-
-  console.log(point2D, point2D.y)
-  circle.style.left = point2D[0] + 'px';
-  circle.style.top = point2D[1] + 'px';
-  
-  // Example: Setting the circle at position (100, 150)
-
-
+  createCircleAtTransformedPoint(H, originX, originY);
+  createCircleAtTransformedPoint(H, originX + w, originY);
+  createCircleAtTransformedPoint(H, originX, originY + h);
+  createCircleAtTransformedPoint(H, originX + w, originY + h);
+ 
   const pose = serializeTransformationMatrix(H);
-  setDoc(doc(db, 'users', logged_user.uid), { tableHomography: pose }, { merge: true });
+  setDoc(doc(db, 'users', logged_user.uid), { paperToProjection: pose }, { merge: true });
   console.log('TableHomography saved successfully');
 
   // Cleanup
-  objectPoints.delete();
-  imagePoints.delete();
+  targetPoints.delete();
+  originPoints.delete();
   H.delete();
+}
+
+
+function createCircleAtTransformedPoint(H, originX, originY) {
+  const point3D = [originX, originY, 1]; 
+  const point2D = applyHomography(H, point3D);
+  const circle = document.createElement('div');
+  circle.className = 'circle';
+  circle.style.left = point2D[0] + 'px';
+  circle.style.top = point2D[1] + 'px';
+  document.getElementById('container').appendChild(circle);
 }

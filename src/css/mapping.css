@@ -25,6 +25,14 @@
   position: absolute;
 }
 
+.circle-grid {
+  width: 10px;
+  height: 10px;
+  background-color: rgb(162, 49, 49);
+  border-radius: 50%;
+  position: absolute;
+}
+
 .corner {
   position: absolute;
   top: 0px; left: 0px;

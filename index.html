@@ -45,6 +45,19 @@
     </div>
 
     <button id="save-pose">Save Pose</button>
+    <button id="calib-cam">CalibrateCamera</button>
+
+    <label for="focalLength">Longueur focale : <span id="focalText">300</span></label>
+    <div id="distance">Distance: N/A</div>
+    <style>
+      #focalLength {
+        width: 40em;
+      }
+    </style>
+
+    <input type="range" id="focalLength" name="focalLength" min="100" max="3000">  
+
+    <div id="decoded-qrcode">Marker Data: N/A</div>
     <video id="webcam" autoplay playsinline></video>
     <div id="rendering">
       <canvas id="canvas"></canvas>
@@ -55,17 +68,7 @@
       </div>
     </div>
 
-    <label for="focalLength">Longueur focale : <span id="focalText">300</span></label>
-    
-    <style>
-      #focalLength {
-        width: 40em;
-      }
-    </style>
 
-    <input type="range" id="focalLength" name="focalLength" min="100" max="3000">  
-
-    <div id="decoded-qrcode">Marker Data: N/A</div>
     
   </main>
     <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
