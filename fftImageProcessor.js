@@ -1,5 +1,5 @@
-import { FFT } from './fft.js';
-import { signInWithGoogle, signOutGoogle, auth, onAuthStateChanged, db, getDoc, setDoc, doc } from './src/firebase';
+import { FFT } from './fourier.js';
+import { signInWithGoogle, signOutGoogle, auth, onAuthStateChanged, db, getDoc, setDoc, doc } from './src/login/firebase.js';
 
 import { startFirebaseWebcam, stopCamera } from './src/camFire.js';
 
