@@ -1,7 +1,7 @@
 {
-  "name": "qr-code-pose-estimation",
+  "name": "natarjs",
   "version": "1.0.0",
-  "description": "QR Code Pose Estimation using JSQR and JIMP",
+  "description": "NatarJS - QR Code Pose Estimation using JSQR and JIMP",
   "main": "src/main.js",
   "scripts": {
     "start": "parcel calib.html index.html markers.html *.html data/* --open",

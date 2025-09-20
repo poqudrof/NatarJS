@@ -1,5 +1,5 @@
 
-import { auth, db, signInWithGoogle, signOutGoogle, onAuthStateChanged, setDoc, getDoc, doc } from './firebase';
+import { auth, db, signInWithGoogle, signOutGoogle, onAuthStateChanged, setDoc, getDoc, doc } from './login/firebase';
 
 let logged_user;
 let currentStream = null;
