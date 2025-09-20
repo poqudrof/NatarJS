@@ -1,0 +1,48 @@
+{
+  "name": "calibration-frontend-tests",
+  "version": "1.0.0",
+  "description": "Automated frontend tests for camera/projector calibration system",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:step1": "jest --testPathPattern=step1",
+    "test:step2": "jest --testPathPattern=step2",
+    "test:watch": "jest --watch",
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "test:debug": "jest --detectOpenHandles --forceExit",
+    "setup": "node setup.js"
+  },
+  "keywords": [
+    "calibration",
+    "puppeteer",
+    "testing",
+    "frontend",
+    "automation"
+  ],
+  "author": "Camera Calibration Team",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^24.0.0",
+    "jest": "^29.7.0",
+    "fs-extra": "^11.1.1",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "jest-environment-node": "^29.7.0",
+    "@types/jest": "^29.5.8"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testTimeout": 60000,
+    "setupFilesAfterEnv": ["<rootDir>/test-setup.js"],
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "../../public/js/**/*.js",
+      "../../src/**/*.js"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["text", "lcov", "html"]
+  }
+}

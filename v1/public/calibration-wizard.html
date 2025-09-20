@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera/Projector Calibration Wizard</title>
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/calibration.css">
+    <link rel="stylesheet" href="css/wizard.css">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- OpenCV.js -->
+    <script async src="../opencv.js" onload="onOpenCvReady();" onerror="onOpenCvError();"></script>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2>Initializing Calibration System</h2>
+            <p id="loading-status">Loading OpenCV.js...</p>
+            <div class="loading-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="loading-progress-fill"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app" class="app" style="display: none;">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1 class="app-title">
+                        <i class="fas fa-camera"></i>
+                        Calibration Wizard
+                    </h1>
+                    <span class="app-version">v1.0</span>
+                </div>
+
+                <div class="header-right">
+                    <div class="user-info" id="user-info" style="display: none;">
+                        <img class="user-avatar" id="user-avatar" src="" alt="User">
+                        <span class="user-name" id="user-name"></span>
+                        <button class="btn btn-sm btn-outline" id="sign-out-btn">Sign Out</button>
+                    </div>
+
+                    <button class="btn btn-sm btn-outline" id="settings-btn">
+                        <i class="fas fa-cog"></i> Settings
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Wizard Container -->
+        <main id="wizard-container" class="wizard-container">
+            <!-- Wizard content will be dynamically loaded here -->
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <span class="footer-text">
+                        Camera/Projector Calibration System
+                    </span>
+                </div>
+
+                <div class="footer-right">
+                    <button class="btn btn-sm btn-link" id="about-btn">About</button>
+                    <button class="btn btn-sm btn-link" id="docs-btn">Documentation</button>
+                    <button class="btn btn-sm btn-link" id="support-btn">Support</button>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-cog"></i> Settings</h3>
+                <button class="modal-close" id="settings-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h4>Calibration Preferences</h4>
+
+                    <div class="setting-item">
+                        <label for="auto-save-toggle">Auto-save calibration data</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="auto-save-toggle" checked>
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <label for="detailed-feedback-toggle">Show detailed feedback</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="detailed-feedback-toggle" checked>
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <label for="theme-select">Interface Theme</label>
+                        <select id="theme-select" class="form-select">
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                            <option value="auto">Auto (System)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h4>Camera Settings</h4>
+
+                    <div class="setting-item">
+                        <label for="preferred-resolution">Preferred Camera Resolution</label>
+                        <select id="preferred-resolution" class="form-select">
+                            <option value="auto">Auto-detect</option>
+                            <option value="1920x1080">1920×1080 (Full HD)</option>
+                            <option value="1280x720">1280×720 (HD)</option>
+                            <option value="640x480">640×480 (SD)</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-item">
+                        <label for="auto-capture-toggle">Enable auto-capture</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="auto-capture-toggle">
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h4>Advanced</h4>
+
+                    <div class="setting-item">
+                        <label for="debug-mode-toggle">Debug mode</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="debug-mode-toggle">
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <button class="btn btn-outline" id="clear-data-btn">
+                            <i class="fas fa-trash"></i> Clear All Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="settings-cancel">Cancel</button>
+                <button class="btn btn-primary" id="settings-save">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div id="about-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-info-circle"></i> About Calibration Wizard</h3>
+                <button class="modal-close" id="about-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="about-content">
+                    <div class="about-logo">
+                        <i class="fas fa-camera" style="font-size: 3rem; color: var(--primary-color);"></i>
+                    </div>
+
+                    <h4>Camera/Projector Calibration System</h4>
+                    <p class="version">Version 1.0.0</p>
+
+                    <p>A comprehensive calibration system for camera and projector setups, providing precise spatial mapping for augmented reality, computer vision, and projection mapping applications.</p>
+
+                    <div class="features-list">
+                        <h5>Features:</h5>
+                        <ul>
+                            <li>✓ User-friendly step-by-step wizard</li>
+                            <li>✓ Real-time quality feedback</li>
+                            <li>✓ Multiple calibration modes</li>
+                            <li>✓ Cloud storage with Firebase</li>
+                            <li>✓ Cross-platform compatibility</li>
+                            <li>✓ Professional accuracy</li>
+                        </ul>
+                    </div>
+
+                    <div class="technical-info">
+                        <h5>Technical Information:</h5>
+                        <ul>
+                            <li>Built with OpenCV.js for computer vision</li>
+                            <li>Modern web technologies (ES6+, WebGL)</li>
+                            <li>Responsive design for all devices</li>
+                            <li>Sub-pixel accuracy calibration</li>
+                        </ul>
+                    </div>
+
+                    <div class="support-info">
+                        <p>Need help? Check our <a href="#" id="documentation-link">documentation</a> or <a href="#" id="support-link">contact support</a>.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="error-modal" class="modal" style="display: none;">
+        <div class="modal-content modal-error">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> <span id="error-title">Error</span></h3>
+                <button class="modal-close" id="error-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="error-content">
+                    <p id="error-message">An unexpected error occurred.</p>
+                    <div class="error-details" id="error-details" style="display: none;">
+                        <h5>Technical Details:</h5>
+                        <pre id="error-details-text"></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="error-details-toggle">Show Details</button>
+                <button class="btn btn-secondary" id="error-retry">Retry</button>
+                <button class="btn btn-primary" id="error-ok">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Notification Container -->
+    <div id="notification-container" class="notification-container">
+        <!-- Notifications will be dynamically added here -->
+    </div>
+
+    <!-- Scripts -->
+    <script type="module">
+        // Import modules
+        import { CalibrationWizard } from '../src/calibration/ui/CalibrationWizard.js';
+        import { firebaseConfig } from '../config/firebase.config.js';
+
+        // Global variables
+        let wizard = null;
+        let cvReady = false;
+        let firebaseReady = false;
+
+        // Initialization
+        window.onOpenCvReady = function() {
+            console.log('OpenCV.js is ready');
+            cvReady = true;
+            updateLoadingProgress();
+        };
+
+        window.onOpenCvError = function() {
+            console.error('Failed to load OpenCV.js');
+            showError('OpenCV Loading Error', 'Failed to load OpenCV.js. Please check your internet connection and refresh the page.');
+        };
+
+        // Initialize Firebase
+        function initializeFirebase() {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                firebaseReady = true;
+                console.log('Firebase initialized');
+                updateLoadingProgress();
+            } catch (error) {
+                console.error('Firebase initialization failed:', error);
+                firebaseReady = true; // Continue without Firebase
+                updateLoadingProgress();
+            }
+        }
+
+        // Update loading progress
+        function updateLoadingProgress() {
+            const statusElement = document.getElementById('loading-status');
+            const progressElement = document.getElementById('loading-progress-fill');
+
+            let progress = 0;
+            let status = 'Initializing...';
+
+            if (cvReady && firebaseReady) {
+                progress = 100;
+                status = 'Ready to start calibration!';
+                setTimeout(initializeApplication, 500);
+            } else if (cvReady) {
+                progress = 75;
+                status = 'Connecting to cloud services...';
+            } else if (firebaseReady) {
+                progress = 25;
+                status = 'Loading computer vision libraries...';
+            }
+
+            statusElement.textContent = status;
+            progressElement.style.width = progress + '%';
+        }
+
+        // Initialize main application
+        async function initializeApplication() {
+            try {
+                // Hide loading screen
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+
+                // Initialize wizard
+                const wizardContainer = document.getElementById('wizard-container');
+                wizard = new CalibrationWizard();
+
+                const initResult = await wizard.initialize(wizardContainer);
+
+                if (initResult.success) {
+                    // Setup event handlers
+                    setupEventHandlers();
+
+                    // Setup authentication
+                    setupAuthentication();
+
+                    // Start wizard
+                    await wizard.startWizard();
+
+                    console.log('Application initialized successfully');
+                } else {
+                    throw new Error(initResult.message || 'Failed to initialize wizard');
+                }
+
+            } catch (error) {
+                console.error('Application initialization failed:', error);
+                showError('Initialization Error', error.message);
+            }
+        }
+
+        // Setup event handlers
+        function setupEventHandlers() {
+            // Settings modal
+            document.getElementById('settings-btn').addEventListener('click', showSettings);
+            document.getElementById('settings-modal-close').addEventListener('click', hideSettings);
+            document.getElementById('settings-cancel').addEventListener('click', hideSettings);
+            document.getElementById('settings-save').addEventListener('click', saveSettings);
+
+            // About modal
+            document.getElementById('about-btn').addEventListener('click', showAbout);
+            document.getElementById('about-modal-close').addEventListener('click', hideAbout);
+
+            // Error modal
+            document.getElementById('error-modal-close').addEventListener('click', hideError);
+            document.getElementById('error-ok').addEventListener('click', hideError);
+            document.getElementById('error-details-toggle').addEventListener('click', toggleErrorDetails);
+
+            // Documentation and support
+            document.getElementById('docs-btn').addEventListener('click', openDocumentation);
+            document.getElementById('support-btn').addEventListener('click', openSupport);
+
+            // Wizard event handlers
+            wizard.setProgressCallback(handleWizardProgress);
+            wizard.setCompleteCallback(handleWizardComplete);
+            wizard.setErrorCallback(handleWizardError);
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', handleKeyboardShortcuts);
+        }
+
+        // Setup Firebase authentication
+        function setupAuthentication() {
+            if (!firebaseReady || !firebase.auth) return;
+
+            firebase.auth().onAuthStateChanged((user) => {
+                const userInfo = document.getElementById('user-info');
+                const userAvatar = document.getElementById('user-avatar');
+                const userName = document.getElementById('user-name');
+                const signOutBtn = document.getElementById('sign-out-btn');
+
+                if (user) {
+                    userInfo.style.display = 'flex';
+                    userAvatar.src = user.photoURL || 'https://via.placeholder.com/32x32';
+                    userName.textContent = user.displayName || user.email;
+
+                    signOutBtn.addEventListener('click', () => {
+                        firebase.auth().signOut();
+                    });
+                } else {
+                    userInfo.style.display = 'none';
+                }
+            });
+        }
+
+        // Event handlers
+        function showSettings() {
+            document.getElementById('settings-modal').style.display = 'flex';
+        }
+
+        function hideSettings() {
+            document.getElementById('settings-modal').style.display = 'none';
+        }
+
+        function saveSettings() {
+            // Collect settings
+            const settings = {
+                autoSave: document.getElementById('auto-save-toggle').checked,
+                detailedFeedback: document.getElementById('detailed-feedback-toggle').checked,
+                theme: document.getElementById('theme-select').value,
+                preferredResolution: document.getElementById('preferred-resolution').value,
+                autoCapture: document.getElementById('auto-capture-toggle').checked,
+                debugMode: document.getElementById('debug-mode-toggle').checked
+            };
+
+            // Save to localStorage
+            localStorage.setItem('calibration-settings', JSON.stringify(settings));
+
+            // Apply settings
+            applySettings(settings);
+
+            hideSettings();
+            showNotification('Settings saved successfully', 'success');
+        }
+
+        function applySettings(settings) {
+            // Apply theme
+            document.body.className = `theme-${settings.theme}`;
+
+            // Update wizard preferences if available
+            if (wizard) {
+                wizard.userPreferences.saveAutomatically = settings.autoSave;
+                wizard.userPreferences.showDetailedFeedback = settings.detailedFeedback;
+            }
+        }
+
+        function showAbout() {
+            document.getElementById('about-modal').style.display = 'flex';
+        }
+
+        function hideAbout() {
+            document.getElementById('about-modal').style.display = 'none';
+        }
+
+        function showError(title, message, details = null) {
+            document.getElementById('error-title').textContent = title;
+            document.getElementById('error-message').textContent = message;
+
+            if (details) {
+                document.getElementById('error-details-text').textContent = details;
+                document.getElementById('error-details').style.display = 'block';
+            } else {
+                document.getElementById('error-details').style.display = 'none';
+            }
+
+            document.getElementById('error-modal').style.display = 'flex';
+        }
+
+        function hideError() {
+            document.getElementById('error-modal').style.display = 'none';
+        }
+
+        function toggleErrorDetails() {
+            const details = document.getElementById('error-details');
+            const toggle = document.getElementById('error-details-toggle');
+
+            if (details.style.display === 'none') {
+                details.style.display = 'block';
+                toggle.textContent = 'Hide Details';
+            } else {
+                details.style.display = 'none';
+                toggle.textContent = 'Show Details';
+            }
+        }
+
+        function openDocumentation() {
+            window.open('/docs', '_blank');
+        }
+
+        function openSupport() {
+            window.open('/support', '_blank');
+        }
+
+        function handleWizardProgress(event) {
+            console.log('Wizard progress:', event);
+        }
+
+        function handleWizardComplete(event) {
+            console.log('Wizard complete:', event);
+            showNotification('Calibration completed successfully! 🎉', 'success');
+        }
+
+        function handleWizardError(event) {
+            console.error('Wizard error:', event);
+            showError('Calibration Error', event.error.message, event.error.stack);
+        }
+
+        function handleKeyboardShortcuts(event) {
+            // Ctrl/Cmd + H: Show help
+            if ((event.ctrlKey || event.metaKey) && event.key === 'h') {
+                event.preventDefault();
+                if (wizard) {
+                    wizard._showHelp();
+                }
+            }
+
+            // Ctrl/Cmd + S: Save progress
+            if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+                event.preventDefault();
+                if (wizard) {
+                    wizard.saveProgress();
+                }
+            }
+
+            // Ctrl/Cmd + ,: Settings
+            if ((event.ctrlKey || event.metaKey) && event.key === ',') {
+                event.preventDefault();
+                showSettings();
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notification-container');
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+
+            const icon = type === 'success' ? 'check-circle' :
+                        type === 'error' ? 'exclamation-circle' :
+                        type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <i class="fas fa-${icon}"></i>
+                    <span>${message}</span>
+                </div>
+                <button class="notification-close">&times;</button>
+            `;
+
+            // Add close functionality
+            notification.querySelector('.notification-close').addEventListener('click', () => {
+                notification.remove();
+            });
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+
+            container.appendChild(notification);
+
+            // Animate in
+            setTimeout(() => {
+                notification.classList.add('notification-show');
+            }, 10);
+        }
+
+        // Load saved settings on startup
+        function loadSavedSettings() {
+            try {
+                const saved = localStorage.getItem('calibration-settings');
+                if (saved) {
+                    const settings = JSON.parse(saved);
+
+                    // Apply to UI
+                    document.getElementById('auto-save-toggle').checked = settings.autoSave ?? true;
+                    document.getElementById('detailed-feedback-toggle').checked = settings.detailedFeedback ?? true;
+                    document.getElementById('theme-select').value = settings.theme ?? 'light';
+                    document.getElementById('preferred-resolution').value = settings.preferredResolution ?? 'auto';
+                    document.getElementById('auto-capture-toggle').checked = settings.autoCapture ?? false;
+                    document.getElementById('debug-mode-toggle').checked = settings.debugMode ?? false;
+
+                    // Apply settings
+                    applySettings(settings);
+                }
+            } catch (error) {
+                console.warn('Could not load saved settings:', error);
+            }
+        }
+
+        // Initialize Firebase and start loading
+        initializeFirebase();
+        loadSavedSettings();
+
+        // Make wizard globally available for debugging
+        window.calibrationWizard = wizard;
+    </script>
+</body>
+</html>

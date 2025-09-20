@@ -1,0 +1,55 @@
+
+#qrcode {
+  top: 0px;
+  left: 0px;
+  width: 150px;
+  height: 120px;
+  background-color:  #fff9;
+  border: 2px solid rgba(0, 0, 0, 0.482);
+  transform-style: preserve-3d;
+  transition: transform 0.05s ease;
+
+  position: absolute; 
+}
+
+video {
+  width: 400px;
+  height: 300px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+canvas {
+border: 1px solid #ddd;
+border-radius: 4px;
+position: absolute;
+}
+
+select, button, div {
+  margin: 5px;
+  padding: 5px;
+}
+
+#decoded-qrcode {
+  width: 400px;
+  text-align: center;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-top: 20px;
+}
+#qrcode-container { 
+  width: 640px;
+  height: 480px; 
+  position: absolute;
+  margin: 0;
+  padding: 0;
+}
+#rendering { 
+position: relative;
+width: 640px; 
+height: 480px;
+margin: 0;
+  padding: 0;
+}

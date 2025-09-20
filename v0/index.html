@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Pose Estimation - Webcam</title>
+    <link rel="stylesheet" href="./src/css/mvp.css">
+    <!-- Other candidate https://picnicss.com/documentation -->
+    <link rel="stylesheet" href="./src/css/styles.css">
+</head>
+<body>
+  <header>
+    <nav>
+        <a href="/"><img alt="Logo" src="https://via.placeholder.com/200x70?text=Logo" height="70"></a>
+      
+        <div id="user-info">
+            <p id="user-name"></p>
+            <button id="google-signin-button">Sign in with Google</button>
+            <button id="google-signout-button">Sign out</button>
+        </div>
+    </nav>
+</header>
+
+<main>
+    <h1>Marker Pose Estimation - Webcam</h1>
+
+    <div>
+      <label for="camera-select">Camera:</label>
+      <select id="camera-select"></select>
+      <label for="resolution-select">Resolution:</label>
+      <select id="resolution-select">
+        <option value="640x480">640 x 480</option>
+        <option value="1280x720">1280 x 720</option>
+        <option value="1920x1080">1920 x 1080</option>
+      </select>
+      <label for="marker-type-select">Marker Type:</label>
+      <select id="marker-type-select">
+        <option value="aruco">Aruco</option>
+        <option value="qr">QR Code</option>
+      </select>
+      <button id="start-camera">Start Camera</button>
+      <button id="stop-camera">Stop Camera</button>
+      <button id="save-config">Save Configuration</button> 
+      <button id="load-config">Load Configuration</button>
+    </div>
+
+    <button id="save-pose">Save Pose</button>
+    <button id="calib-cam">CalibrateCamera</button>
+
+    <label for="focalLength">Longueur focale : <span id="focalText">300</span></label>
+    <div id="distance">Distance: N/A</div>
+    <style>
+      #focalLength {
+        width: 40em;
+      }
+    </style>
+
+    <input type="range" id="focalLength" name="focalLength" min="100" max="3000">  
+
+    <div id="decoded-qrcode">Marker Data: N/A</div>
+    <video id="webcam" autoplay playsinline></video>
+    <div id="rendering">
+      <canvas id="canvas"></canvas>
+      <div id="qrcode-container">
+        <div id="qrcode">
+          Salut !
+        </div>
+      </div>
+    </div>
+
+
+    
+  </main>
+    <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+    <script type="module" src="./main.js"></script>
+    <script type="module" src="./auth.js"></script>
+    <script type="module" src="./cameraConfig.js"></script>
+</body>
+</html>

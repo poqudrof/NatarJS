@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Calibration - User Friendly Guide</title>
+    <link rel="stylesheet" href="css/calibration.css">
+    <link rel="stylesheet" href="css/camera-setup.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="calibration-header">
+            <h1>📷 Camera Calibration</h1>
+            <p class="subtitle">Let's calibrate your camera step by step - it's easier than you think!</p>
+        </header>
+
+        <!-- Authentication Section -->
+        <div id="auth-section" class="section">
+            <div class="auth-card">
+                <h2>Welcome!</h2>
+                <p>Sign in to save your calibration settings</p>
+                <div id="user-info">
+                    <p id="user-name"></p>
+                    <button id="google-signin-button" class="btn btn-primary">
+                        <span class="btn-icon">🔐</span>
+                        Sign in with Google
+                    </button>
+                    <button id="google-signout-button" class="btn btn-secondary" style="display: none;">
+                        <span class="btn-icon">👋</span>
+                        Sign out
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Camera Setup Section -->
+        <div id="camera-setup-section" class="section" style="display: none;">
+            <div class="setup-card">
+                <h2>🎥 Camera Setup</h2>
+                <p>First, let's set up your camera with the best settings</p>
+
+                <!-- Camera Selection -->
+                <div class="input-group">
+                    <label for="camera-select">
+                        <span class="label-icon">📱</span>
+                        Choose Camera:
+                    </label>
+                    <select id="camera-select" class="form-select">
+                        <option value="">Loading cameras...</option>
+                    </select>
+                    <div id="camera-description" class="input-description"></div>
+                </div>
+
+                <!-- Resolution Selection -->
+                <div class="input-group">
+                    <label for="resolution-select">
+                        <span class="label-icon">📐</span>
+                        Choose Quality:
+                    </label>
+                    <select id="resolution-select" class="form-select">
+                        <option value="1280x720">1280×720 (HD) - Recommended</option>
+                        <option value="1920x1080">1920×1080 (Full HD) - Best Quality</option>
+                        <option value="640x480">640×480 (SD) - Fastest</option>
+                    </select>
+                    <div class="input-description">Higher quality gives better calibration but takes longer to process</div>
+                </div>
+
+                <!-- Camera Controls -->
+                <div class="controls-group">
+                    <button id="test-camera-btn" class="btn btn-outline">
+                        <span class="btn-icon">🧪</span>
+                        Test Camera
+                    </button>
+                    <button id="auto-detect-btn" class="btn btn-outline">
+                        <span class="btn-icon">🎯</span>
+                        Auto-Detect Best Settings
+                    </button>
+                    <button id="start-camera-btn" class="btn btn-primary">
+                        <span class="btn-icon">▶️</span>
+                        Start Camera
+                    </button>
+                </div>
+
+                <!-- Camera Status -->
+                <div id="camera-status" class="status-display" style="display: none;">
+                    <div class="status-header">
+                        <span class="status-icon">📊</span>
+                        <span class="status-title">Camera Status</span>
+                    </div>
+                    <div id="camera-status-content"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calibration Section -->
+        <div id="calibration-section" class="section" style="display: none;">
+            <!-- Video and Canvas Container -->
+            <div class="video-container">
+                <video id="camera-video" autoplay playsinline muted></video>
+                <canvas id="camera-canvas"></canvas>
+                <div class="video-overlay">
+                    <div id="pattern-guide" class="pattern-guide">
+                        <div class="guide-text">Position your checkerboard pattern here</div>
+                        <div class="guide-frame"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calibration Controls -->
+            <div class="calibration-controls">
+                <div class="control-buttons">
+                    <button id="capture-btn" class="btn btn-primary btn-large" disabled>
+                        <span class="btn-icon">📸</span>
+                        Capture Pattern
+                    </button>
+                    <button id="auto-capture-btn" class="btn btn-outline" disabled>
+                        <span class="btn-icon">🤖</span>
+                        Auto Capture
+                    </button>
+                    <button id="reset-calibration-btn" class="btn btn-secondary">
+                        <span class="btn-icon">🔄</span>
+                        Start Over
+                    </button>
+                </div>
+
+                <div class="calibration-info">
+                    <div class="info-item">
+                        <span class="info-label">Pattern Size:</span>
+                        <span class="info-value">9×6 inner corners</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Square Size:</span>
+                        <span class="info-value">25mm recommended</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback Display -->
+            <div id="calibration-feedback" class="feedback-container"></div>
+
+            <!-- Calibration Results -->
+            <div id="calibration-results" class="results-container" style="display: none;">
+                <h3>🎉 Calibration Complete!</h3>
+                <div id="results-content"></div>
+                <div class="results-actions">
+                    <button id="save-calibration-btn" class="btn btn-primary">
+                        <span class="btn-icon">💾</span>
+                        Save Calibration
+                    </button>
+                    <button id="test-calibration-btn" class="btn btn-outline">
+                        <span class="btn-icon">🧪</span>
+                        Test Calibration
+                    </button>
+                    <button id="new-calibration-btn" class="btn btn-secondary">
+                        <span class="btn-icon">🆕</span>
+                        New Calibration
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Section -->
+        <div id="help-section" class="section">
+            <div class="help-card">
+                <h3>❓ Need Help?</h3>
+                <details class="help-item">
+                    <summary>What is camera calibration?</summary>
+                    <p>Camera calibration determines your camera's internal characteristics, like focal length and distortion. This allows for accurate 3D measurements and projector mapping.</p>
+                </details>
+                <details class="help-item">
+                    <summary>What do I need for calibration?</summary>
+                    <p>You need a printed checkerboard pattern (9×6 inner corners). You can download and print one from our pattern generator, or use any standard chess/checkerboard with known square size.</p>
+                </details>
+                <details class="help-item">
+                    <summary>How many images do I need?</summary>
+                    <p>We need at least 10 good images from different angles and distances. More images (up to 20) can improve accuracy. The system will guide you through capturing varied positions.</p>
+                </details>
+                <details class="help-item">
+                    <summary>What makes a good calibration image?</summary>
+                    <p>Good images have: clear lighting, sharp focus, the entire pattern visible, varied angles and distances, and no motion blur. Our system provides real-time feedback to help you capture perfect images.</p>
+                </details>
+                <details class="help-item">
+                    <summary>Troubleshooting camera issues</summary>
+                    <p>If your camera won't start: check browser permissions, try refreshing the page, ensure no other apps are using the camera, and try a different browser if needed.</p>
+                </details>
+            </div>
+        </div>
+
+        <!-- Pattern Download Section -->
+        <div id="pattern-section" class="section">
+            <div class="pattern-card">
+                <h3>📐 Calibration Pattern</h3>
+                <p>Download and print this checkerboard pattern on regular paper</p>
+                <div class="pattern-preview">
+                    <div class="checkerboard-preview"></div>
+                </div>
+                <div class="pattern-instructions">
+                    <h4>Printing Instructions:</h4>
+                    <ul>
+                        <li>Print on regular white paper (A4 or Letter size)</li>
+                        <li>Use actual size (100% scale, no "fit to page")</li>
+                        <li>Ensure high contrast black and white squares</li>
+                        <li>Mount on stiff cardboard for easier handling</li>
+                    </ul>
+                </div>
+                <button id="download-pattern-btn" class="btn btn-primary">
+                    <span class="btn-icon">⬇️</span>
+                    Download Pattern (PDF)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Processing calibration...</div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script async src="../opencv.js"></script>
+    <script type="module" src="js/camera-calibration-app.js"></script>
+</body>
+</html>

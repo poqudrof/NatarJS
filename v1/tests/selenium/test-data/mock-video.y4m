@@ -1,0 +1,6 @@
+# Mock video file for testing - placeholder
+# In a real implementation, this would be a proper Y4M video file
+# For testing purposes, we'll use JavaScript to create mock video streams
+YUV4MPEG2 W640 H480 F30:1 Ip A0:0 C420jpeg
+FRAME
+# Frame data would go here - but we'll handle this in JavaScript instead
