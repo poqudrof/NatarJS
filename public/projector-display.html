@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projector Display</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000000;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            cursor: none;
+            user-select: none;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #main-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #welcome-screen {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            max-width: 600px;
+            margin: 20px;
+        }
+
+        #welcome-screen h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        #welcome-screen p {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+
+        #pattern-container {
+            width: 100vw;
+            height: 100vh;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 50;
+        }
+
+        #pattern-canvas {
+            width: 100vw;
+            height: 100vh;
+            object-fit: contain;
+        }
+
+        #pattern-info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 18px;
+            z-index: 80;
+            transition: opacity 0.3s ease;
+        }
+
+        #pattern-info.hidden {
+            opacity: 0;
+        }
+
+        #controls-hint {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            text-align: right;
+            opacity: 0.7;
+            font-size: 14px;
+            background: rgba(0,0,0,0.6);
+            padding: 10px 15px;
+            border-radius: 8px;
+            z-index: 80;
+        }
+
+        #resolution-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 16px;
+            color: #999999;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 15px;
+            border-radius: 8px;
+            z-index: 80;
+        }
+
+        /* Fullscreen styles */
+        :-webkit-full-screen {
+            background: #000000;
+        }
+
+        :-moz-full-screen {
+            background: #000000;
+        }
+
+        :-ms-fullscreen {
+            background: #000000;
+        }
+
+        :fullscreen {
+            background: #000000;
+        }
+
+        /* Hide cursor and UI in fullscreen */
+        :-webkit-full-screen #controls-hint,
+        :-webkit-full-screen #resolution-info {
+            opacity: 0;
+        }
+
+        :-moz-full-screen #controls-hint,
+        :-moz-full-screen #resolution-info {
+            opacity: 0;
+        }
+
+        :-ms-fullscreen #controls-hint,
+        :-ms-fullscreen #resolution-info {
+            opacity: 0;
+        }
+
+        :fullscreen #controls-hint,
+        :fullscreen #resolution-info {
+            opacity: 0;
+        }
+
+        /* Pattern transition animations */
+        .pattern-transition {
+            transition: all 0.3s ease;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Connection status indicator */
+        #connection-status {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 80;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-connected { background: #4CAF50; }
+        .status-disconnected { background: #F44336; }
+        .status-waiting {
+            background: #FF9800;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div id="main-container">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen">
+            <h1>🎯 Projector Display</h1>
+            <p>Ready for pattern projection</p>
+            <p>Controlled from Projector Control Center</p>
+            <p style="font-size: 0.9em; opacity: 0.7; margin-top: 20px;">
+                Press <strong>F11</strong> for fullscreen mode
+            </p>
+        </div>
+
+        <!-- Pattern Display Container -->
+        <div id="pattern-container">
+            <canvas id="pattern-canvas"></canvas>
+        </div>
+
+        <!-- UI Elements -->
+        <div id="connection-status">
+            <div class="status-dot status-waiting" id="statusDot"></div>
+            <span id="statusText">Connecting...</span>
+        </div>
+
+        <div id="resolution-info">
+            Resolution: <span id="resolution-display">Detecting...</span>
+        </div>
+
+        <div id="pattern-info" class="hidden">
+            <span id="pattern-type">Ready</span>
+        </div>
+
+        <div id="controls-hint">
+            <strong>F11</strong> Fullscreen<br>
+            <strong>ESC</strong> Exit<br>
+            <strong>C</strong> Clear
+        </div>
+    </div>
+
+    <script>
+        // Application state
+        let canvas = null;
+        let ctx = null;
+        let currentPattern = null;
+        let isFullscreen = false;
+        let isConnected = false;
+
+        // Initialize display
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeDisplay();
+        });
+
+        function initializeDisplay() {
+            console.log('🎯 Initializing Projector Display...');
+
+            // Initialize canvas
+            canvas = document.getElementById('pattern-canvas');
+            ctx = canvas.getContext('2d');
+
+            // Set up event listeners
+            setupEventListeners();
+
+            // Update display info
+            updateDisplayInfo();
+
+            // Notify parent window that we're ready
+            notifyParent('ready', { resolution: getResolution() });
+
+            // Set connection status
+            updateConnectionStatus(true);
+
+            console.log('✅ Projector Display ready');
+        }
+
+        function setupEventListeners() {
+            // Listen for messages from control center
+            window.addEventListener('message', handleMessage);
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (event) => {
+                switch(event.key) {
+                    case 'F11':
+                        event.preventDefault();
+                        toggleFullscreen();
+                        break;
+                    case 'Escape':
+                        if (document.fullscreenElement) {
+                            exitFullscreen();
+                        } else {
+                            clearPattern();
+                        }
+                        break;
+                    case 'c':
+                    case 'C':
+                        clearPattern();
+                        break;
+                }
+            });
+
+            // Fullscreen change events
+            document.addEventListener('fullscreenchange', () => {
+                isFullscreen = !!document.fullscreenElement;
+                updateDisplayInfo();
+
+                // Notify parent window
+                notifyParent('fullscreen-changed', { fullscreen: isFullscreen });
+
+                // Auto-hide pattern info in fullscreen
+                if (isFullscreen && currentPattern) {
+                    setTimeout(() => {
+                        document.getElementById('pattern-info').classList.add('hidden');
+                    }, 3000);
+                }
+            });
+
+            // Window resize
+            window.addEventListener('resize', () => {
+                updateDisplayInfo();
+                if (currentPattern) {
+                    redrawCurrentPattern();
+                }
+            });
+
+            // Prevent context menu
+            document.addEventListener('contextmenu', (e) => e.preventDefault());
+        }
+
+        // Message handling from control center
+        function handleMessage(event) {
+            const { type, pattern } = event.data;
+
+            switch(type) {
+                case 'init':
+                    updateConnectionStatus(true);
+                    console.log('📡 Connected to control center');
+                    break;
+                case 'display-pattern':
+                    displayPattern(pattern);
+                    break;
+                case 'clear-pattern':
+                    clearPattern();
+                    break;
+                case 'toggle-fullscreen':
+                    toggleFullscreen();
+                    break;
+                default:
+                    console.log('Unknown message type:', type);
+            }
+        }
+
+        // Pattern display functions
+        function displayPattern(patternData) {
+            try {
+                console.log(`🎨 Displaying pattern: ${patternData.type}`);
+
+                // Hide welcome screen
+                document.getElementById('welcome-screen').style.display = 'none';
+
+                // Show pattern container
+                const container = document.getElementById('pattern-container');
+                container.style.display = 'flex';
+                container.classList.add('fade-in');
+
+                // Update canvas size to full viewport
+                updateCanvasSize();
+
+                // Draw pattern based on type
+                drawPattern(patternData);
+
+                // Update pattern info
+                currentPattern = patternData;
+                const patternInfo = document.getElementById('pattern-info');
+                const patternType = document.getElementById('pattern-type');
+
+                patternType.textContent = `Pattern: ${patternData.name || patternData.type}`;
+                patternInfo.classList.remove('hidden');
+
+                // Auto-hide pattern info in fullscreen after 3 seconds
+                if (isFullscreen) {
+                    setTimeout(() => {
+                        patternInfo.classList.add('hidden');
+                    }, 3000);
+                }
+
+                // Notify parent window
+                notifyParent('pattern-displayed', {
+                    success: true,
+                    pattern: patternData.name || patternData.type
+                });
+
+            } catch (error) {
+                console.error('❌ Failed to display pattern:', error);
+                notifyParent('error', { message: error.message });
+            }
+        }
+
+        function drawPattern(patternData) {
+            const { width, height } = canvas;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+
+            switch(patternData.type) {
+                case 'solid-color':
+                    drawSolidColor(patternData.color);
+                    break;
+                case 'grid':
+                    drawGrid();
+                    break;
+                case 'checkerboard':
+                    drawCheckerboard();
+                    break;
+                case 'circles':
+                    drawCircles();
+                    break;
+                case 'lines':
+                    drawLines();
+                    break;
+                case 'crosshair':
+                    drawCrosshair();
+                    break;
+                case 'gradient':
+                    drawGradient();
+                    break;
+                default:
+                    drawSolidColor('#FFFFFF');
+            }
+        }
+
+        function drawSolidColor(color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawGrid() {
+            const gridSize = Math.min(canvas.width, canvas.height) / 20;
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+
+            // Draw vertical lines
+            for (let x = 0; x <= canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            // Draw horizontal lines
+            for (let y = 0; y <= canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawCheckerboard() {
+            const squareSize = Math.min(canvas.width, canvas.height) / 16;
+            const cols = Math.ceil(canvas.width / squareSize);
+            const rows = Math.ceil(canvas.height / squareSize);
+
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    ctx.fillStyle = (row + col) % 2 === 0 ? '#FFFFFF' : '#000000';
+                    ctx.fillRect(col * squareSize, row * squareSize, squareSize, squareSize);
+                }
+            }
+        }
+
+        function drawCircles() {
+            const radius = Math.min(canvas.width, canvas.height) / 40;
+            const spacing = radius * 3;
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#FFFFFF';
+
+            for (let x = spacing; x < canvas.width; x += spacing) {
+                for (let y = spacing; y < canvas.height; y += spacing) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+            }
+        }
+
+        function drawLines() {
+            const lineSpacing = Math.min(canvas.width, canvas.height) / 20;
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 3;
+
+            // Draw vertical lines
+            for (let x = lineSpacing; x < canvas.width; x += lineSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+        }
+
+        function drawCrosshair() {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const lineWidth = 4;
+
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = lineWidth;
+
+            // Draw horizontal line
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(canvas.width, centerY);
+            ctx.stroke();
+
+            // Draw vertical line
+            ctx.beginPath();
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, canvas.height);
+            ctx.stroke();
+
+            // Draw center circle
+            ctx.strokeStyle = '#FF0000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 50, 0, 2 * Math.PI);
+            ctx.stroke();
+        }
+
+        function drawGradient() {
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+            gradient.addColorStop(0, '#FF0000');
+            gradient.addColorStop(0.16, '#FF8000');
+            gradient.addColorStop(0.33, '#FFFF00');
+            gradient.addColorStop(0.5, '#00FF00');
+            gradient.addColorStop(0.66, '#0080FF');
+            gradient.addColorStop(0.83, '#8000FF');
+            gradient.addColorStop(1, '#FF00FF');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function clearPattern() {
+            // Clear canvas
+            if (ctx) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // Hide pattern container
+            document.getElementById('pattern-container').style.display = 'none';
+
+            // Show welcome screen
+            document.getElementById('welcome-screen').style.display = 'flex';
+
+            // Hide pattern info
+            document.getElementById('pattern-info').classList.add('hidden');
+
+            currentPattern = null;
+
+            // Notify parent window
+            notifyParent('pattern-cleared');
+
+            console.log('✅ Pattern cleared');
+        }
+
+        function redrawCurrentPattern() {
+            if (currentPattern) {
+                updateCanvasSize();
+                drawPattern(currentPattern);
+            }
+        }
+
+        // Fullscreen functions
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error('Fullscreen error:', err);
+                    notifyParent('error', { message: 'Failed to enter fullscreen' });
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function exitFullscreen() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
+        }
+
+        // Utility functions
+        function updateCanvasSize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function updateDisplayInfo() {
+            const resolution = getResolution();
+            document.getElementById('resolution-display').textContent =
+                `${resolution.width} × ${resolution.height}`;
+        }
+
+        function getResolution() {
+            return {
+                width: window.innerWidth,
+                height: window.innerHeight
+            };
+        }
+
+        function updateConnectionStatus(connected) {
+            isConnected = connected;
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+
+            if (connected) {
+                dot.className = 'status-dot status-connected';
+                text.textContent = 'Connected';
+            } else {
+                dot.className = 'status-dot status-disconnected';
+                text.textContent = 'Disconnected';
+            }
+        }
+
+        function notifyParent(type, data = {}) {
+            if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({ type, data }, '*');
+            }
+        }
+
+        // Auto-hide cursor after inactivity
+        let cursorTimeout;
+        document.addEventListener('mousemove', () => {
+            document.body.style.cursor = 'default';
+            clearTimeout(cursorTimeout);
+
+            if (isFullscreen) {
+                cursorTimeout = setTimeout(() => {
+                    document.body.style.cursor = 'none';
+                }, 3000);
+            }
+        });
+
+        // Handle window close
+        window.addEventListener('beforeunload', () => {
+            notifyParent('window-closed');
+        });
+
+        // Handle connection loss
+        window.addEventListener('focus', () => {
+            if (!window.opener || window.opener.closed) {
+                updateConnectionStatus(false);
+            }
+        });
+
+        // Expose functions for external control
+        window.projectorDisplay = {
+            displayPattern,
+            clearPattern,
+            toggleFullscreen,
+            getCurrentPattern: () => currentPattern,
+            isFullscreen: () => isFullscreen,
+            isConnected: () => isConnected
+        };
+    </script>
+</body>
+</html>

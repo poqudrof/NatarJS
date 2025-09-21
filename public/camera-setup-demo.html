@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Setup Demo - Real Implementation</title>
+    <link rel="stylesheet" href="css/camera-setup-new.css">
+</head>
+<body>
+    <div id="camera-setup-container"></div>
+
+    <script type="module">
+        import { CameraSetupUI } from '../src/ui/CameraSetupUI.js';
+
+        // Initialize camera setup UI
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                const setupUI = new CameraSetupUI('camera-setup-container');
+                console.log('Camera Setup UI initialized successfully');
+
+                // Cleanup on page unload
+                window.addEventListener('beforeunload', () => {
+                    setupUI.cleanup();
+                });
+
+            } catch (error) {
+                console.error('Failed to initialize Camera Setup UI:', error);
+
+                // Show error in UI
+                const container = document.getElementById('camera-setup-container');
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; background: #fee; border: 1px solid #fcc; border-radius: 8px; color: #c33; margin: 2rem;">
+                        <h2>⚠️ Camera Setup Failed</h2>
+                        <p>Error: ${error.message}</p>
+                        <p>Please ensure your browser supports camera access and refresh the page.</p>
+                        <button onclick="location.reload()" style="padding: 0.75rem 1.5rem; background: #3498db; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 1rem;">
+                            🔄 Refresh Page
+                        </button>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

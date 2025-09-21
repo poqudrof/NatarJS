@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projector Setup - Phase 2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .phase-indicator {
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .setup-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .setup-section h2 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .display-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .display-card {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .display-card.primary {
+            border-color: #4CAF50;
+        }
+
+        .display-card.projector {
+            border-color: #FF9800;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn.secondary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+
+        .btn.success {
+            background: linear-gradient(45deg, #56ab2f, #a8e6cf);
+        }
+
+        .btn.warning {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+        }
+
+        .status-panel {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-indicator {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .status-ready { background: #4CAF50; }
+        .status-active { background: #2196F3; }
+        .status-warning { background: #FF9800; }
+        .status-error { background: #F44336; }
+
+        .log-panel {
+            background: rgba(0,0,0,0.4);
+            padding: 20px;
+            border-radius: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .log-time {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+
+        .checklist li {
+            padding: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .checklist li:before {
+            content: "✓";
+            background: #4CAF50;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 12px;
+        }
+
+        .checklist li.pending:before {
+            content: "○";
+            background: #666;
+        }
+
+        .checklist li.warning:before {
+            content: "!";
+            background: #FF9800;
+        }
+
+        .instructions {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .pattern-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .pattern-btn {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pattern-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .controls {
+                justify-content: center;
+            }
+
+            .btn {
+                min-width: 120px;
+                padding: 12px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Projector Setup</h1>
+            <div class="phase-indicator">Phase 2: Projector Configuration</div>
+            <p>Configure your projector for fullscreen calibration</p>
+        </div>
+
+        <!-- Display Detection Section -->
+        <div class="setup-section">
+            <h2>📺 Display Detection</h2>
+            <div class="instructions">
+                <p><strong>Step 1:</strong> Make sure your projector is connected and set up as a second screen (extended, not mirrored).</p>
+                <p><strong>Step 2:</strong> Click "Detect Displays" to scan for connected screens.</p>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="detectDisplays()">🔍 Detect Displays</button>
+                <button class="btn secondary" onclick="refreshDisplayInfo()">🔄 Refresh</button>
+            </div>
+
+            <div class="display-info" id="displayInfo">
+                <!-- Display information will be populated here -->
+            </div>
+        </div>
+
+        <!-- Projector Window Section -->
+        <div class="setup-section">
+            <h2>🖥️ Projector Window Management</h2>
+            <div class="instructions">
+                <p><strong>Step 3:</strong> Open a projector window that will display calibration patterns.</p>
+                <p><strong>Step 4:</strong> Position it on your projector screen and enable fullscreen mode.</p>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="openProjectorWindow()" id="openBtn">🚀 Open Projector Window</button>
+                <button class="btn secondary" onclick="enterFullscreen()" id="fullscreenBtn" disabled>⛶ Enter Fullscreen</button>
+                <button class="btn warning" onclick="closeProjectorWindow()" id="closeBtn" disabled>✕ Close Window</button>
+            </div>
+
+            <div class="status-panel">
+                <div class="status-item">
+                    <span>Projector Window:</span>
+                    <span class="status-indicator status-warning" id="windowStatus">Not Open</span>
+                </div>
+                <div class="status-item">
+                    <span>Fullscreen Mode:</span>
+                    <span class="status-indicator status-warning" id="fullscreenStatus">Disabled</span>
+                </div>
+                <div class="status-item">
+                    <span>Current Resolution:</span>
+                    <span id="resolutionStatus">Unknown</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pattern Testing Section -->
+        <div class="setup-section">
+            <h2>🎨 Pattern Testing</h2>
+            <div class="instructions">
+                <p><strong>Step 5:</strong> Test projection with various patterns to ensure proper display.</p>
+            </div>
+
+            <div class="pattern-controls">
+                <button class="pattern-btn" onclick="projectPattern('white')" disabled id="patternWhite">⚪ White</button>
+                <button class="pattern-btn" onclick="projectPattern('black')" disabled id="patternBlack">⚫ Black</button>
+                <button class="pattern-btn" onclick="projectPattern('red')" disabled id="patternRed">🔴 Red</button>
+                <button class="pattern-btn" onclick="projectPattern('green')" disabled id="patternGreen">🟢 Green</button>
+                <button class="pattern-btn" onclick="projectPattern('blue')" disabled id="patternBlue">🔵 Blue</button>
+                <button class="pattern-btn" onclick="projectPattern('grid')" disabled id="patternGrid">⬜ Grid</button>
+                <button class="pattern-btn" onclick="projectPattern('checkerboard')" disabled id="patternChecker">🏁 Checkerboard</button>
+                <button class="pattern-btn" onclick="clearPattern()" disabled id="patternClear">❌ Clear</button>
+            </div>
+        </div>
+
+        <!-- Setup Checklist -->
+        <div class="setup-section">
+            <h2>✅ Setup Checklist</h2>
+            <ul class="checklist" id="setupChecklist">
+                <li class="pending">Connect projector to computer</li>
+                <li class="pending">Configure as extended display</li>
+                <li class="pending">Detect displays successfully</li>
+                <li class="pending">Open projector window</li>
+                <li class="pending">Enable fullscreen mode</li>
+                <li class="pending">Test pattern projection</li>
+                <li class="pending">Save configuration</li>
+            </ul>
+        </div>
+
+        <!-- Authentication Section -->
+        <div class="setup-section">
+            <h2>🔐 Cloud Storage Login</h2>
+            <div class="instructions">
+                <p><strong>Optional:</strong> Sign in to save your configurations to the cloud and sync across devices.</p>
+            </div>
+
+            <div class="status-panel">
+                <div class="status-item">
+                    <span>Authentication:</span>
+                    <span class="status-indicator status-warning" id="authStatus">Not Signed In</span>
+                </div>
+                <div class="status-item" id="userInfo" style="display: none;">
+                    <span>User:</span>
+                    <span id="userName">-</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="signInWithGoogle()" id="signInBtn">🔑 Sign In with Google</button>
+                <button class="btn secondary" onclick="signOut()" id="signOutBtn" disabled>🚪 Sign Out</button>
+            </div>
+        </div>
+
+        <!-- Save Configuration -->
+        <div class="setup-section">
+            <h2>💾 Save Configuration</h2>
+            <div class="instructions">
+                <p><strong>Step 6:</strong> Save your projector setup for future use.</p>
+                <p><em>Sign in to save to cloud, or configurations will be saved locally.</em></p>
+            </div>
+
+            <div class="controls">
+                <button class="btn success" onclick="saveConfiguration()" id="saveBtn" disabled>💾 Save Configuration</button>
+                <button class="btn secondary" onclick="loadConfiguration()">📂 Load Configuration</button>
+            </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="setup-section">
+            <h2>📋 Activity Log</h2>
+            <div class="log-panel" id="logPanel">
+                <div class="log-entry">
+                    <span class="log-time">[Initializing]</span> Projector setup ready
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { ProjectorManager } from '../src/projector/ProjectorManager.js';
+        import { WindowManager } from '../src/projector/WindowManager.js';
+        import { ResolutionDetector } from '../src/projector/ResolutionDetector.js';
+        import { SetupStorage } from '../src/storage/SetupStorage.js';
+
+        // Initialize managers
+        let projectorManager = null;
+        let windowManager = null;
+        let resolutionDetector = null;
+        let setupStorage = null;
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', async () => {
+            await initializeProjectorSetup();
+        });
+
+        async function initializeProjectorSetup() {
+            try {
+                log('Initializing projector setup system...');
+
+                projectorManager = new ProjectorManager();
+                windowManager = new WindowManager();
+                resolutionDetector = new ResolutionDetector();
+                setupStorage = new SetupStorage();
+
+                // Set up callbacks
+                projectorManager.setCallbacks({
+                    feedbackCallback: handleFeedback,
+                    statusCallback: handleStatusUpdate,
+                    patternCallback: handlePatternUpdate
+                });
+
+                setupStorage.setCallbacks({
+                    onAuthChanged: handleAuthChanged,
+                    onConfigLoaded: handleConfigLoaded,
+                    onError: handleStorageError
+                });
+
+                // Initialize managers
+                await projectorManager.initialize();
+                await windowManager.initialize();
+
+                // Initialize Firebase storage
+                const storageResult = await setupStorage.initialize();
+                if (storageResult.success) {
+                    log('✅ Cloud storage initialized');
+                } else {
+                    log('⚠️ Cloud storage unavailable, using local storage only');
+                }
+
+                log('✅ Projector setup system initialized successfully');
+                updateChecklistItem(0, true); // Connected projector
+
+            } catch (error) {
+                log(`❌ Initialization failed: ${error.message}`);
+            }
+        }
+
+        // Make functions globally available
+        window.detectDisplays = async function() {
+            try {
+                log('🔍 Detecting displays...');
+
+                const windowResult = await windowManager.initialize();
+                const resolutionResult = await resolutionDetector.detectOptimalResolution();
+
+                updateDisplayInfo(windowResult.displays);
+
+                if (windowResult.success) {
+                    log(`✅ Detected ${windowResult.displays.length} display(s)`);
+                    updateChecklistItem(1, true); // Extended display
+                    updateChecklistItem(2, true); // Detect displays
+                } else {
+                    log(`❌ Display detection failed: ${windowResult.message}`);
+                }
+            } catch (error) {
+                log(`❌ Display detection error: ${error.message}`);
+            }
+        };
+
+        window.refreshDisplayInfo = function() {
+            log('🔄 Refreshing display information...');
+            detectDisplays();
+        };
+
+        window.openProjectorWindow = async function() {
+            try {
+                log('🚀 Opening projector window...');
+
+                const result = await windowManager.openProjectorWindow({
+                    width: 1920,
+                    height: 1080,
+                    autoFullscreen: false
+                });
+
+                if (result.success) {
+                    log('✅ Projector window opened successfully');
+                    updateProjectorStatus();
+                    updateChecklistItem(3, true); // Open projector window
+                    enablePatternButtons(true);
+
+                    document.getElementById('openBtn').disabled = true;
+                    document.getElementById('fullscreenBtn').disabled = false;
+                    document.getElementById('closeBtn').disabled = false;
+                    document.getElementById('saveBtn').disabled = false;
+                } else {
+                    log(`❌ Failed to open projector window: ${result.message}`);
+                    if (result.troubleshooting) {
+                        result.troubleshooting.forEach(tip => log(`💡 ${tip}`));
+                    }
+                }
+            } catch (error) {
+                log(`❌ Error opening projector window: ${error.message}`);
+            }
+        };
+
+        window.enterFullscreen = async function() {
+            try {
+                log('⛶ Entering fullscreen mode...');
+
+                const result = await windowManager.enterFullscreen();
+
+                if (result.success) {
+                    log('✅ Entered fullscreen mode');
+                    updateProjectorStatus();
+                    updateChecklistItem(4, true); // Enable fullscreen
+                } else {
+                    log(`❌ Fullscreen failed: ${result.message}`);
+                    if (result.instructions) {
+                        log(`💡 ${result.instructions}`);
+                    }
+                }
+            } catch (error) {
+                log(`❌ Fullscreen error: ${error.message}`);
+            }
+        };
+
+        window.closeProjectorWindow = function() {
+            try {
+                log('✕ Closing projector window...');
+
+                const result = windowManager.closeWindow();
+
+                if (result.success) {
+                    log('✅ Projector window closed');
+                    updateProjectorStatus();
+
+                    document.getElementById('openBtn').disabled = false;
+                    document.getElementById('fullscreenBtn').disabled = true;
+                    document.getElementById('closeBtn').disabled = true;
+                    enablePatternButtons(false);
+                } else {
+                    log(`❌ ${result.message}`);
+                }
+            } catch (error) {
+                log(`❌ Error closing window: ${error.message}`);
+            }
+        };
+
+        window.projectPattern = async function(patternType) {
+            try {
+                log(`🎨 Projecting ${patternType} pattern...`);
+
+                // Generate pattern data based on type
+                const patternData = generatePatternData(patternType);
+
+                // Use WindowManager to display the pattern
+                const result = windowManager.displayPattern(patternData);
+
+                if (result.success) {
+                    log(`✅ ${patternType} pattern displayed successfully`);
+                    updateChecklistItem(5, true); // Test pattern projection
+                } else {
+                    log(`❌ Pattern projection failed: ${result.message}`);
+                }
+            } catch (error) {
+                log(`❌ Pattern error: ${error.message}`);
+            }
+        };
+
+        window.clearPattern = function() {
+            try {
+                log('❌ Clearing pattern...');
+                const result = windowManager.clearPattern();
+
+                if (result.success) {
+                    log('✅ Pattern cleared');
+                } else {
+                    log(`❌ ${result.message}`);
+                }
+            } catch (error) {
+                log(`❌ Clear pattern error: ${error.message}`);
+            }
+        };
+
+        // Authentication functions
+        window.signInWithGoogle = async function() {
+            try {
+                log('🔑 Signing in with Google...');
+
+                const result = await setupStorage.signInWithGoogle();
+
+                if (result.success) {
+                    log(`✅ Signed in as ${result.user.displayName}`);
+                    updateAuthUI(result.user);
+                } else {
+                    log(`❌ Sign-in failed: ${result.userMessage}`);
+                }
+            } catch (error) {
+                log(`❌ Sign-in error: ${error.message}`);
+            }
+        };
+
+        window.signOut = async function() {
+            try {
+                log('🚪 Signing out...');
+
+                const result = await setupStorage.signOut();
+
+                if (result.success) {
+                    log('✅ Signed out successfully');
+                    updateAuthUI(null);
+                } else {
+                    log(`❌ Sign-out failed: ${result.userMessage}`);
+                }
+            } catch (error) {
+                log(`❌ Sign-out error: ${error.message}`);
+            }
+        };
+
+        window.saveConfiguration = async function() {
+            try {
+                log('💾 Saving projector configuration...');
+
+                const status = windowManager.getStatus();
+                const config = {
+                    name: `Projector Setup ${new Date().toLocaleString()}`,
+                    camera: {
+                        deviceId: 'projector-setup',
+                        label: 'Projector Configuration',
+                        resolution: status.resolution || { width: 1920, height: 1080 },
+                        settings: {
+                            type: 'projector',
+                            displays: status.displays,
+                            isFullscreen: status.isFullscreen,
+                            setupType: 'projector'
+                        }
+                    },
+                    testResults: {
+                        projectorTest: {
+                            windowOpen: status.isOpen,
+                            fullscreen: status.isFullscreen,
+                            resolution: status.resolution,
+                            timestamp: new Date().toISOString()
+                        }
+                    }
+                };
+
+                const result = await setupStorage.saveConfiguration(config);
+
+                if (result.success) {
+                    log(`✅ Configuration saved ${setupStorage.isSignedIn() ? 'to cloud' : 'locally'} with ID: ${result.configId}`);
+                    updateChecklistItem(6, true); // Save configuration
+                } else {
+                    log(`❌ Save failed: ${result.userMessage || result.error}`);
+                }
+
+            } catch (error) {
+                log(`❌ Save configuration error: ${error.message}`);
+            }
+        };
+
+        window.loadConfiguration = async function() {
+            try {
+                log('📂 Loading projector configurations...');
+
+                const result = await setupStorage.loadUserConfigurations();
+
+                if (result.success && result.configurations.length > 0) {
+                    log(`✅ Found ${result.configurations.length} total configuration(s)`);
+
+                    // Filter for projector configurations
+                    const projectorConfigs = result.configurations.filter(c =>
+                        c.camera?.settings?.setupType === 'projector' ||
+                        c.camera?.deviceId === 'projector-setup'
+                    );
+
+                    if (projectorConfigs.length > 0) {
+                        log(`📺 Found ${projectorConfigs.length} projector configuration(s):`);
+                        projectorConfigs.forEach((config, index) => {
+                            const resolution = config.camera?.resolution;
+                            const displays = config.camera?.settings?.displays?.length || '?';
+                            log(`  ${index + 1}. ${config.name} - ${resolution?.width}×${resolution?.height} (${displays} displays)`);
+                        });
+
+                        // Show most recent
+                        const latest = projectorConfigs[0];
+                        log(`📌 Most recent: ${latest.name}`);
+                    } else {
+                        log('📺 No projector configurations found');
+                    }
+                } else {
+                    log('⚠️ No saved configurations found');
+                }
+            } catch (error) {
+                log(`❌ Load configuration error: ${error.message}`);
+            }
+        };
+
+        // Pattern generation function
+        function generatePatternData(patternType) {
+            const patterns = {
+                'white': {
+                    type: 'solid-color',
+                    dataURL: createSolidColorDataURL('#FFFFFF')
+                },
+                'black': {
+                    type: 'solid-color',
+                    dataURL: createSolidColorDataURL('#000000')
+                },
+                'red': {
+                    type: 'solid-color',
+                    dataURL: createSolidColorDataURL('#FF0000')
+                },
+                'green': {
+                    type: 'solid-color',
+                    dataURL: createSolidColorDataURL('#00FF00')
+                },
+                'blue': {
+                    type: 'solid-color',
+                    dataURL: createSolidColorDataURL('#0000FF')
+                },
+                'grid': {
+                    type: 'test-grid',
+                    dataURL: createGridPatternDataURL()
+                },
+                'checkerboard': {
+                    type: 'checkerboard',
+                    dataURL: createCheckerboardDataURL()
+                }
+            };
+
+            return patterns[patternType] || patterns['white'];
+        }
+
+        function createSolidColorDataURL(color) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 800;
+            canvas.height = 600;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            return canvas.toDataURL();
+        }
+
+        function createGridPatternDataURL() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 800;
+            canvas.height = 600;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+
+            const gridSize = 40;
+            for (let x = 0; x <= canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            for (let y = 0; y <= canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            return canvas.toDataURL();
+        }
+
+        function createCheckerboardDataURL() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 800;
+            canvas.height = 600;
+            const ctx = canvas.getContext('2d');
+
+            const squareSize = 50;
+            const cols = Math.ceil(canvas.width / squareSize);
+            const rows = Math.ceil(canvas.height / squareSize);
+
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    ctx.fillStyle = (row + col) % 2 === 0 ? '#FFFFFF' : '#000000';
+                    ctx.fillRect(col * squareSize, row * squareSize, squareSize, squareSize);
+                }
+            }
+
+            return canvas.toDataURL();
+        }
+
+        // Helper functions
+        function updateDisplayInfo(displays) {
+            const container = document.getElementById('displayInfo');
+            container.innerHTML = '';
+
+            displays.forEach((display, index) => {
+                const card = document.createElement('div');
+                card.className = `display-card ${display.primary ? 'primary' : 'projector'}`;
+                card.innerHTML = `
+                    <h3>${display.name}</h3>
+                    <p><strong>Resolution:</strong> ${display.bounds.width} × ${display.bounds.height}</p>
+                    <p><strong>Position:</strong> ${display.bounds.x}, ${display.bounds.y}</p>
+                    <p><strong>Type:</strong> ${display.primary ? 'Primary Display' : 'Secondary Display'}</p>
+                    ${!display.primary ? '<p style="color: #4CAF50;"><strong>👆 Recommended for projector</strong></p>' : ''}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function updateProjectorStatus() {
+            const status = windowManager.getStatus();
+
+            document.getElementById('windowStatus').textContent = status.isOpen ? 'Open' : 'Closed';
+            document.getElementById('windowStatus').className = `status-indicator ${status.isOpen ? 'status-active' : 'status-warning'}`;
+
+            document.getElementById('fullscreenStatus').textContent = status.isFullscreen ? 'Enabled' : 'Disabled';
+            document.getElementById('fullscreenStatus').className = `status-indicator ${status.isFullscreen ? 'status-ready' : 'status-warning'}`;
+
+            if (status.resolution) {
+                document.getElementById('resolutionStatus').textContent = `${status.resolution.width} × ${status.resolution.height}`;
+            }
+        }
+
+        function enablePatternButtons(enabled) {
+            const buttons = ['patternWhite', 'patternBlack', 'patternRed', 'patternGreen', 'patternBlue', 'patternGrid', 'patternChecker', 'patternClear'];
+            buttons.forEach(id => {
+                document.getElementById(id).disabled = !enabled;
+            });
+        }
+
+        function updateChecklistItem(index, completed) {
+            const items = document.querySelectorAll('#setupChecklist li');
+            if (items[index]) {
+                items[index].className = completed ? '' : 'pending';
+            }
+        }
+
+        // Auth UI helper functions
+        function updateAuthUI(user) {
+            const authStatus = document.getElementById('authStatus');
+            const userInfo = document.getElementById('userInfo');
+            const userName = document.getElementById('userName');
+            const signInBtn = document.getElementById('signInBtn');
+            const signOutBtn = document.getElementById('signOutBtn');
+
+            if (user) {
+                authStatus.textContent = 'Signed In';
+                authStatus.className = 'status-indicator status-ready';
+                userName.textContent = user.displayName || user.email;
+                userInfo.style.display = 'flex';
+                signInBtn.disabled = true;
+                signOutBtn.disabled = false;
+            } else {
+                authStatus.textContent = 'Not Signed In';
+                authStatus.className = 'status-indicator status-warning';
+                userInfo.style.display = 'none';
+                signInBtn.disabled = false;
+                signOutBtn.disabled = true;
+            }
+        }
+
+        // Storage callback functions
+        function handleAuthChanged(user) {
+            log(user ? `🔐 Signed in as ${user.displayName}` : '🔐 Signed out');
+            updateAuthUI(user);
+        }
+
+        function handleConfigLoaded(configurations) {
+            log(`📂 Loaded ${configurations.length} configuration(s)`);
+        }
+
+        function handleStorageError(error) {
+            log(`❌ Storage error: ${error}`);
+        }
+
+        // Feedback callback functions
+        function handleFeedback(type, message) {
+            log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function handleStatusUpdate(status, message) {
+            log(`[STATUS] ${message}`);
+        }
+
+        function handlePatternUpdate(data) {
+            log(`[PATTERN] ${JSON.stringify(data)}`);
+        }
+
+        function log(message) {
+            const logPanel = document.getElementById('logPanel');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">[${timestamp}]</span> ${message}`;
+            logPanel.appendChild(entry);
+            logPanel.scrollTop = logPanel.scrollHeight;
+        }
+
+        // Initial display detection
+        setTimeout(() => {
+            detectDisplays();
+        }, 1000);
+    </script>
+</body>
+</html>
